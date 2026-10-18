@@ -167,7 +167,7 @@
                             class="w-full bg-[#090d0b] text-white px-3.5 py-2 rounded-xl text-xs neon-border focus:outline-none">
                         <!-- Image Preview -->
                         <div id="imagePreviewContainer" class="mt-2 hidden">
-                            <img id="imagePreview" src="" alt="Preview" class="w-full h-32 object-cover rounded-xl neon-border">
+                            <img id="imagePreview" src="" alt="Preview" class="w-full aspect-[4/3] object-contain bg-black rounded-xl neon-border">
                         </div>
                     </div>
 
@@ -424,8 +424,8 @@
                 return `
                 <div class="bg-cardBg rounded-2xl neon-border overflow-hidden flex flex-col justify-between shadow-xl hover:border-neonGreen transition duration-300">
                     <div>
-                        <div class="h-40 w-full relative overflow-hidden bg-black">
-                            <img src="${esc(event.image || DEFAULT_IMAGE)}" referrerpolicy="no-referrer" onerror="this.onerror=null; this.src='${DEFAULT_IMAGE}';" alt="${esc(event.title)}" class="w-full h-full object-cover">
+                        <div class="aspect-[4/3] w-full relative overflow-hidden bg-black">
+                            <img src="${esc(event.image || DEFAULT_IMAGE)}" referrerpolicy="no-referrer" onerror="this.onerror=null; this.src='${DEFAULT_IMAGE}';" alt="${esc(event.title)}" class="w-full h-full object-contain">
                             <div class="absolute top-3 left-3 bg-black/70 backdrop-blur-md px-3 py-1 rounded-full text-xs font-semibold text-neonGreen neon-border">
                                 ${esc(event.fee)}
                             </div>
