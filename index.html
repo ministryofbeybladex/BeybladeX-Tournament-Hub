@@ -174,8 +174,12 @@
                     <!-- Date -->
                     <div>
                         <label class="block text-xs font-semibold text-gray-300 mb-1">วันที่แข่งขัน</label>
-                        <input type="date" id="formDate" required
-                            class="w-full bg-[#090d0b] text-white px-3.5 py-2.5 rounded-xl text-sm neon-border focus:outline-none">
+                        <div class="flex items-center gap-2">
+                            <input type="date" id="formDate" required max="2100-12-31"
+                                title="กรอกปีเป็น ค.ศ. เช่น 2026 (ไม่ใช่ พ.ศ. 2569)"
+                                class="flex-1 min-w-0 bg-[#090d0b] text-white px-3.5 py-2.5 rounded-xl text-sm neon-border focus:outline-none">
+                            <span class="text-xs text-yellow-400 whitespace-nowrap">วัน/เดือน/ปี (ค.ศ.)</span>
+                        </div>
                     </div>
 
                     <!-- Time Slots -->
