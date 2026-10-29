@@ -138,6 +138,21 @@
 
             <!-- WINNER COMBOS -->
             <img src="winner-congrats.jpg" alt="ขอแสดงความยินดีกับผู้ชนะทุกคนด้วยจ้า" loading="lazy" class="w-full max-w-md mx-auto rounded-2xl neon-border mt-4">
+
+            <!-- COMBO USAGE CHART (Sheet tab "Graph") -->
+            <div class="bg-cardBg p-4 md:p-6 rounded-2xl neon-border shadow-xl space-y-4">
+                <div>
+                    <h2 class="text-lg font-bold text-white flex items-center gap-2">
+                        <i class="fa-solid fa-chart-simple text-neonGreen"></i> คอมโบที่ถูกใช้บ่อย
+                    </h2>
+                    <p id="usageNote" class="text-xs text-gray-400">กำลังโหลดข้อมูล...</p>
+                </div>
+                <div id="usageChart" class="space-y-2"></div>
+                <button id="usageMoreBtn" class="hidden w-full bg-[#1b3b2b] text-neonGreen font-semibold py-2 rounded-xl text-xs hover:bg-neonGreen hover:text-black transition">
+                    ดูทั้งหมด
+                </button>
+            </div>
+
             <div class="flex justify-between items-center px-1">
                 <h2 class="text-lg font-bold text-white flex items-center gap-2">
                     <i class="fa-solid fa-trophy text-yellow-400"></i> คอมโบแชมป์ล่าสุด
@@ -636,7 +651,7 @@
                 <div class="bg-cardBg rounded-2xl neon-border p-4 space-y-3 shadow-xl hover:border-neonGreen transition duration-300">
                     <div class="flex justify-between items-start gap-2">
                         <div class="min-w-0">
-                            <h3 class="font-bold text-white text-base line-clamp-1">${esc(c.event_name)}</h3>
+                            <h3 class="font-bold ${/official/i.test(c.type) ? 'text-neonGreen' : 'text-white'} text-base line-clamp-1">${esc(c.event_name)}</h3>
                             <div class="text-xs text-gray-400 flex items-center gap-2">
                                 <i class="fa-regular fa-calendar text-neonGreen"></i> ${esc(formatThaiDate(c.date))}
                                 ${c.type ? `<span class="bg-[#090d0b] px-2 py-0.5 rounded-md neon-border">${esc(c.type)}</span>` : ''}
@@ -663,9 +678,58 @@
 
         document.getElementById('comboMoreBtn').addEventListener('click', () => renderCombos(true));
 
+        // --- COMBO USAGE CHART: รวมคอมโบ 1-3 จากแท็บ Graph แล้วนับจำนวนครั้ง ---
+        const USAGE_CSV_URL = 'https://docs.google.com/spreadsheets/d/1ZI1xmJw19klKV5arPidy46xINhBCqMBYnTtLkp8ScWU/gviz/tq?tqx=out:csv&gid=1805478530&range=A2:C1000';
+        const USAGE_PREVIEW = 10;
+        let usage = [];
+
+        // 'SharkScale1-60NR' -> 'SharkScale 1-60 NR', 'GloryValkyrie-K' -> 'GloryValkyrie K'
+        function comboLabel(s) {
+            const m = /^(.*?)(\d+-\d+|-)([A-Z]+)$/.exec(s);
+            return m ? [m[1].trim(), m[2] === '-' ? '' : m[2], m[3]].filter(Boolean).join(' ') : s;
+        }
+
+        async function fetchUsage() {
+            try {
+                const response = await fetch(USAGE_CSV_URL);
+                if (!response.ok) throw new Error(response.status);
+                const counts = new Map();
+                parseCSV(await response.text()).flatMap(Object.values).filter(Boolean).forEach(v => {
+                    const key = v.replace(/\s+/g, '').toLowerCase(); // 'Knight Shield' = 'KnightShield'
+                    const item = counts.get(key) || { label: comboLabel(v), count: 0 };
+                    item.count++;
+                    counts.set(key, item);
+                });
+                usage = [...counts.values()].sort((a, b) => b.count - a.count || a.label.localeCompare(b.label));
+                const total = usage.reduce((sum, u) => sum + u.count, 0);
+                document.getElementById('usageNote').textContent = `จากคอมโบที่ชนะทั้งหมด ${total} ตัว (${usage.length} แบบ)`;
+                renderUsage(false);
+            } catch (error) {
+                console.error('Error fetching usage:', error);
+                document.getElementById('usageNote').textContent = 'โหลดข้อมูลไม่สำเร็จ';
+            }
+        }
+
+        function renderUsage(showAll) {
+            const max = usage[0]?.count || 1;
+            document.getElementById('usageMoreBtn').classList.toggle('hidden', showAll || usage.length <= USAGE_PREVIEW);
+            document.getElementById('usageChart').innerHTML = (showAll ? usage : usage.slice(0, USAGE_PREVIEW)).map(u => `
+                <div class="grid grid-cols-[minmax(0,10rem)_1fr] md:grid-cols-[minmax(0,13rem)_1fr] items-center gap-3 text-xs" title="${esc(u.label)}: ${u.count} ครั้ง">
+                    <span class="text-white font-semibold truncate text-right">${esc(u.label)}</span>
+                    <div class="flex items-center gap-2">
+                        <div class="h-4 bg-neonGreen rounded-r" style="width: ${(u.count / max) * 85}%"></div>
+                        <span class="text-gray-300 font-semibold">${u.count}</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        document.getElementById('usageMoreBtn').addEventListener('click', () => renderUsage(true));
+
         // Initial Load
         fetchTournaments();
         fetchCombos();
+        fetchUsage();
     </script>
 </body>
 </html>
