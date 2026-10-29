@@ -594,7 +594,8 @@
         }
 
         // --- WINNER COMBOS (Google Sheet BBXWinnerCombo, เปิดแชร์แบบทุกคนที่มีลิงก์ดูได้) ---
-        const COMBO_CSV_URL = 'https://docs.google.com/spreadsheets/d/1ZI1xmJw19klKV5arPidy46xINhBCqMBYnTtLkp8ScWU/gviz/tq?tqx=out:csv';
+        // export (ไม่ใช่ gviz): gviz ทิ้งค่าที่ชนิดข้อมูลไม่ตรงกับส่วนใหญ่ในคอลัมน์ เช่น วันที่ที่พิมพ์เป็นข้อความ
+        const COMBO_CSV_URL = 'https://docs.google.com/spreadsheets/d/1ZI1xmJw19klKV5arPidy46xINhBCqMBYnTtLkp8ScWU/export?format=csv&gid=0';
         const COMBO_PREVIEW = 6;
         let combos = [];
 
