@@ -136,6 +136,19 @@
                 <!-- Data cards will load here -->
             </div>
 
+            <!-- WINNER COMBOS -->
+            <div class="flex justify-between items-center px-1 pt-4">
+                <h2 class="text-lg font-bold text-white flex items-center gap-2">
+                    <i class="fa-solid fa-trophy text-yellow-400"></i> คอมโบแชมป์ล่าสุด
+                </h2>
+                <span id="comboCount" class="text-xs text-gray-400 bg-black/40 px-3 py-1 rounded-full neon-border">กำลังโหลดข้อมูล...</span>
+            </div>
+
+            <div id="comboListContainer" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+            <button id="comboMoreBtn" class="hidden w-full bg-[#1b3b2b] text-neonGreen font-semibold py-2.5 rounded-xl text-sm hover:bg-neonGreen hover:text-black transition">
+                ดูเพิ่มเติม
+            </button>
+
         </section>
 
         <!-- RIGHT COLUMN: ORGANIZER SUBMISSION FORM -->
@@ -564,8 +577,94 @@
             renderTournaments(filtered);
         }
 
+        // --- WINNER COMBOS (Google Sheet BBXWinnerCombo, เปิดแชร์แบบทุกคนที่มีลิงก์ดูได้) ---
+        const COMBO_CSV_URL = 'https://docs.google.com/spreadsheets/d/1ZI1xmJw19klKV5arPidy46xINhBCqMBYnTtLkp8ScWU/gviz/tq?tqx=out:csv';
+        const COMBO_PREVIEW = 6;
+        let combos = [];
+
+        // CSV -> array ของ object ตาม header (ตัดช่องว่างท้ายชื่อคอลัมน์และค่า)
+        function parseCSV(text) {
+            const rows = [];
+            let row = [], field = '', quoted = false;
+            for (let i = 0; i < text.length; i++) {
+                const c = text[i];
+                if (quoted) {
+                    if (c === '"' && text[i + 1] === '"') { field += '"'; i++; }
+                    else if (c === '"') quoted = false;
+                    else field += c;
+                } else if (c === '"') quoted = true;
+                else if (c === ',') { row.push(field); field = ''; }
+                else if (c === '\n') { row.push(field); rows.push(row); row = []; field = ''; }
+                else if (c !== '\r') field += c;
+            }
+            if (field || row.length) { row.push(field); rows.push(row); }
+            const headers = rows.shift().map(h => h.trim());
+            return rows.map(r => Object.fromEntries(headers.map((h, j) => [h, (r[j] ?? '').trim()])));
+        }
+
+        // 'd/m/yyyy' -> 'yyyy-mm-dd'
+        function dmyToIso(s) {
+            const [d, m, y] = s.split('/');
+            return y ? `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}` : s;
+        }
+
+        async function fetchCombos() {
+            try {
+                const response = await fetch(COMBO_CSV_URL);
+                if (!response.ok) throw new Error(response.status);
+                combos = parseCSV(await response.text())
+                    .filter(r => r.date && r.winner_name)
+                    .map(r => ({ ...r, date: dmyToIso(r.date) }))
+                    .sort((a, b) => a.date < b.date ? 1 : a.date > b.date ? -1 : 0);
+                renderCombos(false);
+            } catch (error) {
+                console.error('Error fetching combos:', error);
+                document.getElementById('comboCount').textContent = 'โหลดข้อมูลไม่สำเร็จ';
+            }
+        }
+
+        function renderCombos(showAll) {
+            const container = document.getElementById('comboListContainer');
+            const moreBtn = document.getElementById('comboMoreBtn');
+            document.getElementById('comboCount').textContent = `${combos.length} รายการ`;
+            moreBtn.classList.toggle('hidden', showAll || combos.length <= COMBO_PREVIEW);
+
+            container.innerHTML = (showAll ? combos : combos.slice(0, COMBO_PREVIEW)).map(c => {
+                const decks = [1, 2, 3].map(n => [c['blade' + n], c['ratchet' + n], c['bit' + n]]);
+                return `
+                <div class="bg-cardBg rounded-2xl neon-border p-4 space-y-3 shadow-xl hover:border-neonGreen transition duration-300">
+                    <div class="flex justify-between items-start gap-2">
+                        <div class="min-w-0">
+                            <h3 class="font-bold text-white text-base line-clamp-1">${esc(c.event_name)}</h3>
+                            <div class="text-xs text-gray-400 flex items-center gap-2">
+                                <i class="fa-regular fa-calendar text-neonGreen"></i> ${esc(formatThaiDate(c.date))}
+                                ${c.type ? `<span class="bg-[#090d0b] px-2 py-0.5 rounded-md neon-border">${esc(c.type)}</span>` : ''}
+                            </div>
+                        </div>
+                        <span class="shrink-0 bg-yellow-400 text-black text-[11px] font-bold px-2.5 py-0.5 rounded-full">อันดับ ${esc(c.rank || '-')}</span>
+                    </div>
+                    <div class="text-sm text-yellow-400 font-semibold flex items-center gap-2">
+                        <i class="fa-solid fa-crown"></i> <span class="line-clamp-1">${esc(c.winner_name)}</span>
+                    </div>
+                    <div class="space-y-1.5">
+                        ${decks.map(([blade, ratchet, bit], i) => `
+                        <div class="flex items-center gap-2 bg-[#090d0b] px-3 py-1.5 rounded-xl border border-borderGreen text-xs">
+                            <span class="text-neonGreen font-bold w-4">${i + 1}</span>
+                            <span class="text-white font-semibold flex-grow min-w-0 truncate">${esc(blade)}</span>
+                            ${ratchet && ratchet !== '-' ? `<span class="text-gray-300">${esc(ratchet)}</span>` : ''}
+                            <span class="text-gray-300">${esc(bit)}</span>
+                        </div>`).join('')}
+                    </div>
+                    ${/^https?:\/\//.test(c.source_link) ? `<a href="${esc(c.source_link)}" target="_blank" rel="noopener" class="text-xs text-neonGreen hover:underline inline-flex items-center gap-1"><i class="fa-solid fa-arrow-up-right-from-square"></i> ดูโพสต์ต้นทาง</a>` : ''}
+                </div>
+            `}).join('');
+        }
+
+        document.getElementById('comboMoreBtn').addEventListener('click', () => renderCombos(true));
+
         // Initial Load
         fetchTournaments();
+        fetchCombos();
     </script>
 </body>
 </html>
