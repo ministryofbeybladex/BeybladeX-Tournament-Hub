@@ -1,0 +1,108 @@
+"""Build the Facebook share collage from the upcoming tournaments.
+
+Writes og/collage-<hash>.jpg and points og:image in index.html at it. The hash
+comes from the image list, so the file only changes when the lineup changes.
+Run from anywhere: python scripts/make_og.py
+"""
+import hashlib
+import io
+import json
+import math
+import re
+import urllib.request
+from pathlib import Path
+
+from PIL import Image, ImageOps
+
+ROOT = Path(__file__).resolve().parent.parent
+INDEX = ROOT / 'index.html'
+OG_DIR = ROOT / 'og'
+SITE_URL = 'https://ministryofbeybladex.github.io/BeybladeX-Tournament-Hub/'
+WIDTH, HEIGHT = 1200, 630  # Facebook link preview size
+GAP = 8
+BACKGROUND = '#090d0b'
+
+
+def fetch(url):
+    request = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+    with urllib.request.urlopen(request, timeout=30) as response:
+        return response.read()
+
+
+def load_images(urls):
+    """Download images, skipping any that fail. Returns (url, image) pairs."""
+    loaded = []
+    for url in urls:
+        try:
+            image = ImageOps.exif_transpose(Image.open(io.BytesIO(fetch(url))))
+            loaded.append((url, image.convert('RGB')))
+        except Exception as error:
+            print(f'skip {url}: {error}')
+    return loaded
+
+
+def grid(count, aspect, width=WIDTH, height=HEIGHT, gap=GAP):
+    """Pick the column count that shows images largest. Returns (cols, rows)."""
+    def shown_area(cols):
+        rows = math.ceil(count / cols)
+        cell_w = (width - gap * (cols + 1)) / cols
+        cell_h = (height - gap * (rows + 1)) / rows
+        return min(cell_w, cell_h * aspect) * min(cell_w / aspect, cell_h)
+
+    cols = max(range(1, count + 1), key=shown_area)
+    return cols, math.ceil(count / cols)
+
+
+def collage(images):
+    canvas = Image.new('RGB', (WIDTH, HEIGHT), BACKGROUND)
+    aspect = sum(i.width / i.height for i in images) / len(images)
+    cols, rows = grid(len(images), aspect)
+    cell_w = (WIDTH - GAP * (cols + 1)) // cols
+    cell_h = (HEIGHT - GAP * (rows + 1)) // rows
+
+    for index, image in enumerate(images):
+        row, col = divmod(index, cols)
+        in_row = min(cols, len(images) - row * cols)
+        offset = (WIDTH - in_row * cell_w - (in_row + 1) * GAP) // 2  # center a short last row
+        scale = min(cell_w / image.width, cell_h / image.height)
+        fitted = image.resize((round(image.width * scale), round(image.height * scale)), Image.LANCZOS)
+        x = offset + GAP + col * (cell_w + GAP) + (cell_w - fitted.width) // 2
+        y = GAP + row * (cell_h + GAP) + (cell_h - fitted.height) // 2
+        canvas.paste(fitted, (x, y))
+    return canvas
+
+
+def main():
+    html = INDEX.read_bytes().decode('utf-8')  # bytes keep the file's line endings
+    web_app_url = re.search(r"WEB_APP_URL = '([^']+)'", html).group(1)
+    events = json.loads(fetch(web_app_url))['data']
+    urls = list(dict.fromkeys(e['image'] for e in events if e['image']))  # same poster = one tile
+
+    loaded = load_images(urls)
+    if not loaded:
+        print('no images, keeping current collage')
+        return
+
+    digest = hashlib.sha1('\n'.join(url for url, _ in loaded).encode()).hexdigest()[:10]
+    name = f'collage-{digest}.jpg'
+    if name in html and (OG_DIR / name).exists():
+        print(f'{name} is up to date')
+        return
+
+    OG_DIR.mkdir(exist_ok=True)
+    for old in OG_DIR.glob('collage-*.jpg'):
+        old.unlink()
+    collage([image for _, image in loaded]).save(OG_DIR / name, quality=85, optimize=True, progressive=True)
+
+    html, replaced = re.subn(
+        r'(<meta property="og:image" content=")[^"]*(")',
+        rf'\g<1>{SITE_URL}og/{name}\g<2>',
+        html,
+    )
+    assert replaced == 1, 'og:image tag not found in index.html'
+    INDEX.write_bytes(html.encode('utf-8'))
+    print(f'wrote {name} with {len(loaded)} images')
+
+
+if __name__ == '__main__':
+    main()

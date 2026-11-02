@@ -1,0 +1,32 @@
+name: Update share collage
+
+on:
+  schedule:
+    - cron: '0 */6 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+
+jobs:
+  collage:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install pillow
+      - run: python scripts/make_og.py
+      - name: Commit and republish when the collage changed
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git add og index.html
+          git diff --cached --quiet && exit 0
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'chore: update share collage'
+          git push
+          gh api -X POST "repos/$GITHUB_REPOSITORY/pages/builds"
