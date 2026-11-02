@@ -4,11 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ministry of Beyblade X - Tournament Hub</title>
-    <!-- ภาพแชร์ Facebook: og:image อัปเดตอัตโนมัติโดย scripts/make_og.py -->
+    <!-- ภาพแชร์และปุ่มโหลดภาพรวม: og:image อัปเดตอัตโนมัติโดย scripts/make_og.py -->
     <meta property="og:type" content="website">
     <meta property="og:title" content="ตารางการแข่งขัน BEYBLADE X">
     <meta property="og:description" content="รวมงานแข่ง Beyblade X ที่กำลังจะมาถึง พร้อมลิงก์สมัคร">
-    <meta property="og:image" content="https://ministryofbeybladex.github.io/BeybladeX-Tournament-Hub/og/collage-a610597e6e.jpg">
+    <meta property="og:image" content="https://ministryofbeybladex.github.io/BeybladeX-Tournament-Hub/og/collage-d24b77ad9c.jpg">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
     <!-- Tailwind CSS -->
@@ -70,10 +70,6 @@
                 <!-- GLOBAL SHARE BUTTONS (META / LINE / TWITTER) -->
                 <div class="flex items-center gap-2 bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-full neon-border">
                     <span class="text-[11px] text-gray-300 hidden md:inline font-medium">แชร์เว็บนี้:</span>
-                    <!-- Meta / Facebook -->
-                    <button onclick="shareHub()" class="w-7 h-7 rounded-full bg-[#1877F2]/20 hover:bg-[#1877F2] text-[#1877F2] hover:text-white flex items-center justify-center text-xs transition duration-200" title="Share to Facebook">
-                        <i class="fa-brands fa-facebook-f"></i>
-                    </button>
                     <!-- Line -->
                     <button onclick="shareLine(window.location.href, 'Ministry of Beyblade X - ศูนย์รวมงานแข่งเบย์เบลด')" class="w-7 h-7 rounded-full bg-[#00B900]/20 hover:bg-[#00B900] text-[#00B900] hover:text-white flex items-center justify-center text-xs transition duration-200" title="Share to Line">
                         <i class="fa-brands fa-line"></i>
@@ -132,10 +128,15 @@
             </div>
 
             <!-- TOURNAMENT LIST -->
-            <div class="flex justify-between items-center px-1">
-                <h2 class="text-lg font-bold text-white flex items-center gap-2">
-                    <i class="fa-solid fa-calendar-days text-neonGreen"></i> รายการแข่งขันทั้งหมด
-                </h2>
+            <div class="flex flex-wrap justify-between items-center gap-2 px-1">
+                <div class="flex flex-wrap items-center gap-x-3 gap-y-2">
+                    <h2 class="text-lg font-bold text-white flex items-center gap-2">
+                        <i class="fa-solid fa-calendar-days text-neonGreen"></i> รายการแข่งขันทั้งหมด
+                    </h2>
+                    <a id="collageDownload" download="ภาพรวมงานแข่ง-Beyblade-X.jpg" class="bg-neonGreen text-black font-bold px-3 py-1.5 rounded-xl text-xs hover:bg-white transition inline-flex items-center gap-2">
+                        <i class="fa-solid fa-download"></i> โหลดภาพรวมงานแข่ง
+                    </a>
+                </div>
                 <span id="eventCount" class="text-xs text-gray-400 bg-black/40 px-3 py-1 rounded-full neon-border">กำลังโหลดข้อมูล...</span>
             </div>
 
@@ -352,12 +353,6 @@
         function shareMeta(url, title) {
             const shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`;
             window.open(shareUrl, '_blank', 'width=600,height=400');
-        }
-
-        // Facebook จำพรีวิวตาม URL: ใส่รหัสภาพรวมใน ?v= ให้ดึงภาพใหม่เมื่อรายการงานเปลี่ยน
-        function shareHub() {
-            const version = document.querySelector('meta[property="og:image"]').content.match(/collage-(\w+)/)?.[1];
-            shareMeta(location.origin + location.pathname + (version ? `?v=${version}` : ''));
         }
 
         function shareLine(url, title) {
@@ -739,6 +734,10 @@
         }
 
         document.getElementById('usageMoreBtn').addEventListener('click', () => renderUsage(true));
+
+        // ปุ่มโหลดภาพรวม: ใช้ไฟล์ล่าสุดที่ scripts/make_og.py ตั้งไว้ใน og:image
+        document.getElementById('collageDownload').href =
+            'og/' + document.querySelector('meta[property="og:image"]').content.split('/').pop();
 
         // Initial Load
         fetchTournaments();

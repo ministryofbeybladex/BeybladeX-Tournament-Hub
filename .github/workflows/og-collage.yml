@@ -18,6 +18,7 @@ jobs:
         with:
           python-version: '3.12'
       - run: pip install pillow
+      - run: python scripts/test_make_og.py
       - run: python scripts/make_og.py
       - name: Commit and republish when the collage changed
         env:

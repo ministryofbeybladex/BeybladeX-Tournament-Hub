@@ -1,4 +1,4 @@
-"""Build the Facebook share collage from the upcoming tournaments.
+"""Build the tournament collage (share preview and download button).
 
 Writes og/collage-<hash>.jpg and points og:image in index.html at it. The hash
 comes from the image list, so the file only changes when the lineup changes.
@@ -12,7 +12,7 @@ import re
 import urllib.request
 from pathlib import Path
 
-from PIL import Image, ImageOps
+from PIL import Image, ImageDraw, ImageFont, ImageOps
 
 ROOT = Path(__file__).resolve().parent.parent
 INDEX = ROOT / 'index.html'
@@ -21,6 +21,10 @@ SITE_URL = 'https://ministryofbeybladex.github.io/BeybladeX-Tournament-Hub/'
 WIDTH, HEIGHT = 1200, 630  # Facebook link preview size
 GAP = 8
 BACKGROUND = '#090d0b'
+CAPTION = 'ministryofbeybladex.github.io/BeybladeX-Tournament-Hub'  # readable even if a link gets stripped
+CAPTION_HEIGHT = 44
+CAPTION_COLOR = '#00FF66'
+FONTS = ('DejaVuSans-Bold.ttf', 'arialbd.ttf')  # Linux runner, Windows
 
 
 def fetch(url):
@@ -53,12 +57,22 @@ def grid(count, aspect, width=WIDTH, height=HEIGHT, gap=GAP):
     return cols, math.ceil(count / cols)
 
 
+def caption_font(size=24):
+    for name in FONTS:
+        try:
+            return ImageFont.truetype(name, size)
+        except OSError:
+            pass
+    raise OSError(f'none of {FONTS} installed')
+
+
 def collage(images):
     canvas = Image.new('RGB', (WIDTH, HEIGHT), BACKGROUND)
     aspect = sum(i.width / i.height for i in images) / len(images)
-    cols, rows = grid(len(images), aspect)
+    area_height = HEIGHT - CAPTION_HEIGHT
+    cols, rows = grid(len(images), aspect, height=area_height)
     cell_w = (WIDTH - GAP * (cols + 1)) // cols
-    cell_h = (HEIGHT - GAP * (rows + 1)) // rows
+    cell_h = (area_height - GAP * (rows + 1)) // rows
 
     for index, image in enumerate(images):
         row, col = divmod(index, cols)
@@ -69,6 +83,14 @@ def collage(images):
         x = offset + GAP + col * (cell_w + GAP) + (cell_w - fitted.width) // 2
         y = GAP + row * (cell_h + GAP) + (cell_h - fitted.height) // 2
         canvas.paste(fitted, (x, y))
+
+    draw = ImageDraw.Draw(canvas)
+    font = caption_font()
+    left, top, right, bottom = draw.textbbox((0, 0), CAPTION, font=font)
+    draw.text(
+        ((WIDTH - right + left) / 2 - left, HEIGHT - (CAPTION_HEIGHT + bottom - top) / 2 - top),
+        CAPTION, font=font, fill=CAPTION_COLOR,
+    )
     return canvas
 
 
@@ -83,7 +105,7 @@ def main():
         print('no images, keeping current collage')
         return
 
-    digest = hashlib.sha1('\n'.join(url for url, _ in loaded).encode()).hexdigest()[:10]
+    digest = hashlib.sha1('\n'.join([CAPTION, *(url for url, _ in loaded)]).encode()).hexdigest()[:10]
     name = f'collage-{digest}.jpg'
     if name in html and (OG_DIR / name).exists():
         print(f'{name} is up to date')
