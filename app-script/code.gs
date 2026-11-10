@@ -8,8 +8,20 @@ var TZ = 'Asia/Bangkok';
 var MAX_IMAGE_BYTES = 2 * 1024 * 1024;
 var HEADERS = ['id', 'title', 'date', 'times', 'fee', 'province', 'district', 'venue', 'mapLink', 'image', 'rewards', 'link', 'approved'];
 
+// Google Sheet BBXWinnerCombo (แท็บแรก) ที่เว็บงานแข่งและ Part Optimizer ใช้แสดงคอมโบผู้ชนะ
+var WINNER_SHEET_ID = '1ZI1xmJw19klKV5arPidy46xINhBCqMBYnTtLkp8ScWU';
+// คอลัมน์ที่ส่งออกให้เว็บ (คอลัมน์อื่นในชีต เช่น approved หรือข้อมูลติดต่อ จะไม่หลุดออกไป)
+var WINNER_FIELDS = ['date', 'event_name', 'type', 'rank', 'winner_name',
+  'blade1', 'ratchet1', 'bit1', 'blade2', 'ratchet2', 'bit2', 'blade3', 'ratchet3', 'bit3', 'source_link'];
+var WINNER_TYPES = ['shop winner', 'shop winner (Team)', 'G1 Official', 'G2 Official', 'G3 Official'];
+
 // 1. GET: ส่งเฉพาะงานที่อนุมัติแล้ว และยังไม่ถึงวันแข่ง เรียงจากวันที่ใกล้สุด
+//    ?data=winners: ส่งคอมโบผู้ชนะที่อนุมัติแล้วเป็น CSV (รูปแบบเดียวกับ export ของ Google Sheet)
 function doGet(e) {
+  if (e && e.parameter && e.parameter.data === 'winners') {
+    return ContentService.createTextOutput(winnersCsv(getWinnerSheet().getDataRange().getDisplayValues()))
+      .setMimeType(ContentService.MimeType.CSV);
+  }
   try {
     var rows = getSheet().getDataRange().getValues();
     var headers = rows.shift();
@@ -49,9 +61,18 @@ function doGet(e) {
 }
 
 // 2. POST: รับงานแข่งใหม่ บันทึกรูปลง Drive แล้วเพิ่มแถว (approved = ไม่ติ๊ก รอผู้ดูแลอนุมัติ)
+//    kind = 'winner': รับคอมโบผู้ชนะ เพิ่มแถวใน BBXWinnerCombo (approved = ไม่ติ๊ก)
 function doPost(e) {
   try {
     var p = JSON.parse(e.postData.contents);
+    if (p.kind === 'winner') {
+      var winnerSheet = getWinnerSheet();
+      var winnerHeaders = trimmed(winnerSheet.getRange(1, 1, 1, winnerSheet.getLastColumn()).getValues()[0]);
+      if (winnerHeaders.indexOf('approved') === -1) throw new Error('ยังไม่ได้รัน setupWinners');
+      winnerSheet.appendRow(winnerRow(p, winnerHeaders));
+      winnerSheet.getRange(winnerSheet.getLastRow(), winnerHeaders.indexOf('approved') + 1).insertCheckboxes();
+      return json({ ok: true });
+    }
     if (!p.title || !p.date || !p.fee || !p.province || !p.district || !p.venue) {
       throw new Error('กรอกข้อมูลไม่ครบ');
     }
@@ -105,6 +126,71 @@ function getSheet() {
     sheet.getRange(1, headers.length + 1, 1, missing.length).setValues([missing]);
   }
   return sheet;
+}
+
+// แท็บแรก (gid=0) ของ BBXWinnerCombo
+function getWinnerSheet() {
+  return SpreadsheetApp.openById(WINNER_SHEET_ID).getSheets().filter(function (s) { return s.getSheetId() === 0; })[0];
+}
+
+function trimmed(headers) {
+  return headers.map(function (h) { return String(h).trim(); });
+}
+
+// ค่าที่ชีตแสดง (getDisplayValues) -> CSV เฉพาะแถวที่ติ๊ก approved และเฉพาะคอลัมน์ใน WINNER_FIELDS
+function winnersCsv(values) {
+  var headers = trimmed(values[0]);
+  var approved = headers.indexOf('approved');
+  var cols = WINNER_FIELDS.map(function (f) { return headers.indexOf(f); });
+  var cell = function (v) { return '"' + String(v).replace(/"/g, '""') + '"'; };
+  var lines = [WINNER_FIELDS.map(cell).join(',')];
+  values.slice(1).forEach(function (row) {
+    if (approved === -1 || row[approved] !== 'TRUE') return;
+    lines.push(cols.map(function (j) { return cell(j === -1 ? '' : row[j]); }).join(','));
+  });
+  return lines.join('\n');
+}
+
+// ข้อมูลจากฟอร์ม -> แถวตามลำดับ header ของชีต (approved = false รอผู้ดูแลติ๊ก)
+function winnerRow(p, headers) {
+  var text = function (v, max) { return String(v || '').trim().slice(0, max); };
+  var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(p.date || '');
+  if (!m) throw new Error('วันที่ไม่ถูกต้อง');
+  var values = {
+    date: Number(m[3]) + '/' + Number(m[2]) + '/' + m[1], // d/m/yyyy แบบเดียวกับแถวเดิม
+    event_name: text(p.event_name, 80),
+    type: WINNER_TYPES.indexOf(p.type) !== -1 ? p.type : '',
+    rank: String(Math.min(Math.max(parseInt(p.rank, 10) || 0, 1), 8)),
+    winner_name: text(p.winner_name, 60),
+    source_link: /^https?:\/\//.test(p.source_link || '') ? text(p.source_link, 300) : '',
+    approved: false
+  };
+  [1, 2, 3].forEach(function (n) {
+    ['blade', 'ratchet', 'bit'].forEach(function (k) { values[k + n] = text(p[k + n], 40); });
+  });
+  if (!values.event_name || !values.type || !values.winner_name || !values.blade1 || !values.bit1) {
+    throw new Error('กรอกข้อมูลไม่ครบ');
+  }
+  // ใส่ ' นำหน้าข้อความ กัน Sheet แปลงเป็นสูตร/ตัวเลข/วันที่เอง
+  return headers.map(function (key) {
+    var v = values.hasOwnProperty(key) ? values[key] : '';
+    return typeof v === 'string' && v !== '' ? "'" + v : v;
+  });
+}
+
+// กด Run ฟังก์ชันนี้ในหน้า editor หนึ่งครั้ง: เพิ่มคอลัมน์ approved ใน BBXWinnerCombo และติ๊กให้แถวเดิมทั้งหมด
+function setupWinners() {
+  var sheet = getWinnerSheet();
+  var headers = trimmed(sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0]);
+  if (headers.indexOf('approved') !== -1) return;
+  var col = headers.length + 1;
+  sheet.getRange(1, col).setValue('approved');
+  var rows = sheet.getLastRow() - 1;
+  if (rows > 0) {
+    var range = sheet.getRange(2, col, rows, 1);
+    range.insertCheckboxes();
+    range.setValues(sheet.getRange(2, 1, rows, col - 1).getValues().map(function (r) { return [r.join('') !== '']; }));
+  }
 }
 
 // รับ data URL (base64) บันทึกเป็นไฟล์ใน Drive และคืนลิงก์ที่ใช้ใน <img> ได้

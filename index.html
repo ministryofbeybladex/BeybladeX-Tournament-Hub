@@ -166,10 +166,15 @@
                 </button>
             </div>
 
-            <div class="flex justify-between items-center px-1">
-                <h2 class="text-lg font-bold text-white flex items-center gap-2">
-                    <i class="fa-solid fa-trophy text-yellow-400"></i> คอมโบแชมป์ล่าสุด
-                </h2>
+            <div class="flex flex-wrap justify-between items-center gap-2 px-1">
+                <div class="flex flex-wrap items-center gap-x-3 gap-y-2">
+                    <h2 class="text-lg font-bold text-white flex items-center gap-2">
+                        <i class="fa-solid fa-trophy text-yellow-400"></i> คอมโบแชมป์ล่าสุด
+                    </h2>
+                    <button type="button" id="winnerFormBtn" class="bg-neonGreen text-black font-bold px-3 py-1.5 rounded-xl text-xs hover:bg-white transition inline-flex items-center gap-2">
+                        <i class="fa-solid fa-pen-to-square"></i> ส่งคอมโบผู้ชนะ
+                    </button>
+                </div>
                 <span id="comboCount" class="text-xs text-gray-400 bg-black/40 px-3 py-1 rounded-full neon-border">กำลังโหลดข้อมูล...</span>
             </div>
 
@@ -322,6 +327,74 @@
             <p>This website is intended for fan education, discussion, and entertainment purposes.</p>
         </section>
     </footer>
+
+    <!-- WINNER COMBO FORM: ส่งเข้า BBXWinnerCombo แล้วรอผู้ดูแลติ๊ก approved -->
+    <dialog id="winnerDialog" class="bg-cardBg text-white rounded-2xl neon-border p-0 w-[calc(100%-2rem)] max-w-xl backdrop:bg-black/70">
+        <form id="winnerForm" class="p-5 space-y-3">
+            <div class="flex justify-between items-center pb-2 border-b border-borderGreen">
+                <div>
+                    <h2 class="text-base font-bold">ส่งคอมโบผู้ชนะ</h2>
+                    <p class="text-xs text-gray-400">แสดงบนเว็บหลังผู้ดูแลอนุมัติ</p>
+                </div>
+                <button type="button" id="winnerCloseBtn" class="text-gray-400 hover:text-white px-2" title="ปิด"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <label class="text-xs font-semibold text-gray-300 space-y-1 block">
+                    <span>วันที่แข่ง <span class="text-yellow-400">วัน/เดือน/ปี (ค.ศ.)</span></span>
+                    <input type="date" name="date" required max="2100-12-31" class="w-full bg-[#090d0b] text-white px-3 py-2 rounded-xl text-sm neon-border focus:outline-none">
+                </label>
+                <label class="text-xs font-semibold text-gray-300 space-y-1 block">
+                    <span>ชื่อร้าน / ชื่องาน</span>
+                    <input name="event_name" required maxlength="80" placeholder="เช่น Board Game Stations" class="w-full bg-[#090d0b] text-white px-3 py-2 rounded-xl text-sm neon-border focus:outline-none">
+                </label>
+                <label class="text-xs font-semibold text-gray-300 space-y-1 block">
+                    <span>ประเภทงาน</span>
+                    <select name="type" required class="w-full bg-[#090d0b] text-white px-3 py-2 rounded-xl text-sm neon-border focus:outline-none">
+                        <option value="shop winner">shop winner</option>
+                        <option value="shop winner (Team)">shop winner (Team)</option>
+                        <option value="G1 Official">G1 Official</option>
+                        <option value="G2 Official">G2 Official</option>
+                        <option value="G3 Official">G3 Official</option>
+                    </select>
+                </label>
+                <label class="text-xs font-semibold text-gray-300 space-y-1 block">
+                    <span>อันดับ</span>
+                    <input type="number" name="rank" required min="1" max="8" value="1" class="w-full bg-[#090d0b] text-white px-3 py-2 rounded-xl text-sm neon-border focus:outline-none">
+                </label>
+                <label class="text-xs font-semibold text-gray-300 space-y-1 block sm:col-span-2">
+                    <span>ชื่อผู้ชนะ</span>
+                    <input name="winner_name" required maxlength="60" class="w-full bg-[#090d0b] text-white px-3 py-2 rounded-xl text-sm neon-border focus:outline-none">
+                </label>
+            </div>
+            <div class="space-y-2">
+                <span class="text-xs font-semibold text-gray-300">คอมโบ (Blade / Ratchet / Bit)</span>
+                <div class="grid grid-cols-[1.25rem_2fr_1fr_1fr] gap-2 items-center">
+                    <span class="text-neonGreen font-bold text-sm">1</span>
+                    <input name="blade1" list="bladeList" maxlength="40" placeholder="Blade" required class="w-full bg-[#090d0b] text-white px-3 py-2 rounded-xl text-sm neon-border focus:outline-none">
+                    <input name="ratchet1" list="ratchetList" maxlength="40" placeholder="1-60 หรือ -" class="w-full bg-[#090d0b] text-white px-3 py-2 rounded-xl text-sm neon-border focus:outline-none">
+                    <input name="bit1" list="bitList" maxlength="40" placeholder="Bit" required class="w-full bg-[#090d0b] text-white px-3 py-2 rounded-xl text-sm neon-border focus:outline-none">
+                </div>
+                <div class="grid grid-cols-[1.25rem_2fr_1fr_1fr] gap-2 items-center">
+                    <span class="text-neonGreen font-bold text-sm">2</span>
+                    <input name="blade2" list="bladeList" maxlength="40" placeholder="Blade" class="w-full bg-[#090d0b] text-white px-3 py-2 rounded-xl text-sm neon-border focus:outline-none">
+                    <input name="ratchet2" list="ratchetList" maxlength="40" placeholder="1-60 หรือ -" class="w-full bg-[#090d0b] text-white px-3 py-2 rounded-xl text-sm neon-border focus:outline-none">
+                    <input name="bit2" list="bitList" maxlength="40" placeholder="Bit" class="w-full bg-[#090d0b] text-white px-3 py-2 rounded-xl text-sm neon-border focus:outline-none">
+                </div>
+                <div class="grid grid-cols-[1.25rem_2fr_1fr_1fr] gap-2 items-center">
+                    <span class="text-neonGreen font-bold text-sm">3</span>
+                    <input name="blade3" list="bladeList" maxlength="40" placeholder="Blade" class="w-full bg-[#090d0b] text-white px-3 py-2 rounded-xl text-sm neon-border focus:outline-none">
+                    <input name="ratchet3" list="ratchetList" maxlength="40" placeholder="1-60 หรือ -" class="w-full bg-[#090d0b] text-white px-3 py-2 rounded-xl text-sm neon-border focus:outline-none">
+                    <input name="bit3" list="bitList" maxlength="40" placeholder="Bit" class="w-full bg-[#090d0b] text-white px-3 py-2 rounded-xl text-sm neon-border focus:outline-none">
+                </div>
+            </div>
+                <label class="text-xs font-semibold text-gray-300 space-y-1 block">
+                    <span>ลิงก์โพสต์ผลแข่ง (ถ้ามี)</span>
+                    <input type="url" name="source_link" placeholder="https://facebook.com/..." class="w-full bg-[#090d0b] text-white px-3 py-2 rounded-xl text-sm neon-border focus:outline-none">
+                </label>
+            <button type="submit" id="winnerSubmitBtn" class="w-full bg-neonGreen text-black font-bold py-2.5 rounded-xl text-sm hover:bg-white transition">ส่งข้อมูล</button>
+        </form>
+        <datalist id="bladeList"></datalist><datalist id="ratchetList"></datalist><datalist id="bitList"></datalist>
+    </dialog>
 
     <!-- JAVASCRIPT LOGIC -->
     <script>
@@ -614,9 +687,8 @@
             renderTournaments(filtered);
         }
 
-        // --- WINNER COMBOS (Google Sheet BBXWinnerCombo, เปิดแชร์แบบทุกคนที่มีลิงก์ดูได้) ---
-        // export (ไม่ใช่ gviz): gviz ทิ้งค่าที่ชนิดข้อมูลไม่ตรงกับส่วนใหญ่ในคอลัมน์ เช่น วันที่ที่พิมพ์เป็นข้อความ
-        const COMBO_CSV_URL = 'https://docs.google.com/spreadsheets/d/1ZI1xmJw19klKV5arPidy46xINhBCqMBYnTtLkp8ScWU/export?format=csv&gid=0';
+        // --- WINNER COMBOS: Google Sheet BBXWinnerCombo ผ่าน Apps Script (เฉพาะแถวที่ติ๊ก approved) ---
+        const COMBO_CSV_URL = WEB_APP_URL + '?data=winners';
         const COMBO_PREVIEW = 6;
         let combos = [];
 
@@ -650,7 +722,11 @@
             try {
                 const response = await fetch(COMBO_CSV_URL);
                 if (!response.ok) throw new Error(response.status);
-                combos = parseCSV(await response.text())
+                const rows = parseCSV(await response.text());
+                usage = countUsage(rows);
+                renderUsage(false);
+                fillComboSuggestions(rows);
+                combos = rows
                     .filter(r => r.date && r.winner_name)
                     .map(r => ({ ...r, date: dmyToIso(r.date) }))
                     .sort((a, b) => a.date < b.date ? 1 : a.date > b.date ? -1 : 0);
@@ -658,6 +734,7 @@
             } catch (error) {
                 console.error('Error fetching combos:', error);
                 document.getElementById('comboCount').textContent = 'โหลดข้อมูลไม่สำเร็จ';
+                document.getElementById('usageNote').textContent = 'โหลดข้อมูลไม่สำเร็จ';
             }
         }
 
@@ -700,36 +777,25 @@
 
         document.getElementById('comboMoreBtn').addEventListener('click', () => renderCombos(true));
 
-        // --- COMBO USAGE CHART: รวมคอมโบ 1-3 จากแท็บ Graph แล้วนับจำนวนครั้ง ---
-        const USAGE_CSV_URL = 'https://docs.google.com/spreadsheets/d/1ZI1xmJw19klKV5arPidy46xINhBCqMBYnTtLkp8ScWU/gviz/tq?tqx=out:csv&gid=1805478530&range=A2:C1000';
+        // --- COMBO USAGE CHART: รวมคอมโบ 1-3 ของทุกแถวที่อนุมัติ แล้วนับจำนวนครั้ง ---
         const USAGE_PREVIEW = 10;
         let usage = [];
 
-        // 'SharkScale1-60NR' -> 'SharkScale 1-60 NR', 'GloryValkyrie-K' -> 'GloryValkyrie K'
-        function comboLabel(s) {
-            const m = /^(.*?)(\d+-\d+|-)([A-Z]+)$/.exec(s);
-            return m ? [m[1].trim(), m[2] === '-' ? '' : m[2], m[3]].filter(Boolean).join(' ') : s;
-        }
-
-        async function fetchUsage() {
-            try {
-                const response = await fetch(USAGE_CSV_URL);
-                if (!response.ok) throw new Error(response.status);
-                const counts = new Map();
-                parseCSV(await response.text()).flatMap(Object.values).filter(Boolean).forEach(v => {
-                    const key = v.replace(/\s+/g, '').toLowerCase(); // 'Knight Shield' = 'KnightShield'
-                    const item = counts.get(key) || { label: comboLabel(v), count: 0 };
-                    item.count++;
-                    counts.set(key, item);
-                });
-                usage = [...counts.values()].sort((a, b) => b.count - a.count || a.label.localeCompare(b.label));
-                const total = usage.reduce((sum, u) => sum + u.count, 0);
-                document.getElementById('usageNote').textContent = `จากคอมโบที่ชนะทั้งหมด ${total} ตัว (${usage.length} แบบ)`;
-                renderUsage(false);
-            } catch (error) {
-                console.error('Error fetching usage:', error);
-                document.getElementById('usageNote').textContent = 'โหลดข้อมูลไม่สำเร็จ';
-            }
+        function countUsage(rows) {
+            const counts = new Map();
+            rows.forEach(r => [1, 2, 3].forEach(n => {
+                const [blade, ratchet, bit] = [r['blade' + n], r['ratchet' + n], r['bit' + n]];
+                if (!blade) return;
+                const label = [blade, ratchet === '-' ? '' : ratchet, bit].filter(Boolean).join(' ');
+                const key = label.replace(/\s+/g, '').toLowerCase(); // 'Knight Shield' = 'KnightShield'
+                const item = counts.get(key) || { label, count: 0 };
+                item.count++;
+                counts.set(key, item);
+            }));
+            const list = [...counts.values()].sort((a, b) => b.count - a.count || a.label.localeCompare(b.label));
+            const total = list.reduce((sum, u) => sum + u.count, 0);
+            document.getElementById('usageNote').textContent = `จากคอมโบที่ชนะทั้งหมด ${total} ตัว (${list.length} แบบ)`;
+            return list;
         }
 
         function renderUsage(showAll) {
@@ -748,6 +814,46 @@
 
         document.getElementById('usageMoreBtn').addEventListener('click', () => renderUsage(true));
 
+        // --- WINNER COMBO FORM ---
+        const winnerDialog = document.getElementById('winnerDialog');
+        const winnerForm = document.getElementById('winnerForm');
+        document.getElementById('winnerFormBtn').addEventListener('click', () => winnerDialog.showModal());
+        document.getElementById('winnerCloseBtn').addEventListener('click', () => winnerDialog.close());
+
+        // ชื่อชิ้นส่วนที่มีในชีตแล้ว ให้เลือกจากรายการ สะกดจะได้ตรงกัน
+        function fillComboSuggestions(rows) {
+            ['blade', 'ratchet', 'bit'].forEach(k => {
+                const names = new Set(rows.flatMap(r => [1, 2, 3].map(n => r[k + n])).filter(Boolean));
+                document.getElementById(k + 'List').innerHTML = [...names].sort().map(v => `<option value="${esc(v)}">`).join('');
+            });
+        }
+
+        winnerForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const submitBtn = document.getElementById('winnerSubmitBtn');
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'กำลังส่ง...';
+            try {
+                // text/plain = simple request ไม่มี CORS preflight
+                const response = await fetch(WEB_APP_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify({ kind: 'winner', ...Object.fromEntries(new FormData(winnerForm)) })
+                });
+                const result = await response.json();
+                if (!result.ok) throw new Error(result.error);
+                alert('ส่งคอมโบผู้ชนะแล้ว! จะแสดงบนเว็บหลังผู้ดูแลอนุมัติ');
+                winnerForm.reset();
+                winnerDialog.close();
+            } catch (error) {
+                console.error('Error saving winner:', error);
+                alert('ส่งข้อมูลไม่สำเร็จ: ' + error.message);
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'ส่งข้อมูล';
+            }
+        });
+
         // ปุ่มโหลดภาพรวม: ใช้ไฟล์ล่าสุดที่ scripts/make_og.py ตั้งไว้ใน og:image
         document.getElementById('collageDownload').href =
             'og/' + document.querySelector('meta[property="og:image"]').content.split('/').pop();
@@ -755,7 +861,6 @@
         // Initial Load
         fetchTournaments();
         fetchCombos();
-        fetchUsage();
     </script>
 </body>
 </html>
