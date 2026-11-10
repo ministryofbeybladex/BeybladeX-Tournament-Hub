@@ -14,6 +14,11 @@ var WINNER_SHEET_ID = '1ZI1xmJw19klKV5arPidy46xINhBCqMBYnTtLkp8ScWU';
 var WINNER_FIELDS = ['date', 'event_name', 'type', 'rank', 'winner_name',
   'blade1', 'ratchet1', 'bit1', 'blade2', 'ratchet2', 'bit2', 'blade3', 'ratchet3', 'bit3', 'source_link'];
 var WINNER_TYPES = ['shop winner', 'shop winner (Team)', 'G1 Official', 'G2 Official', 'G3 Official'];
+// รูปโปรไฟล์ผู้ชนะ: แท็บ Profiles ใน BBXWinnerCombo (winner_name, image) รูปเก็บในโฟลเดอร์ย่อย WinnerProfiles
+// ผู้ดูแลอัปรูปจากหน้า profile-admin.html ด้วยรหัส ADMIN_KEY (ตั้งใน Project Settings > Script Properties)
+var PROFILE_TAB = 'Profiles';
+var PROFILE_FOLDER = 'WinnerProfiles';
+var MAX_PROFILE_BYTES = 200 * 1024; // หน้า admin ย่อเหลือ 256x256 (~20KB) ก่อนส่ง
 
 // 1. GET: ส่งเฉพาะงานที่อนุมัติแล้ว และยังไม่ถึงวันแข่ง เรียงจากวันที่ใกล้สุด
 //    ?data=winners: ส่งคอมโบผู้ชนะที่อนุมัติแล้วเป็น CSV (รูปแบบเดียวกับ export ของ Google Sheet)
@@ -21,6 +26,9 @@ function doGet(e) {
   if (e && e.parameter && e.parameter.data === 'winners') {
     return ContentService.createTextOutput(winnersCsv(getWinnerSheet().getDataRange().getDisplayValues()))
       .setMimeType(ContentService.MimeType.CSV);
+  }
+  if (e && e.parameter && e.parameter.data === 'profiles') {
+    return json({ ok: true, data: profilesList(getProfileSheet().getDataRange().getValues()) });
   }
   try {
     var rows = getSheet().getDataRange().getValues();
@@ -71,6 +79,10 @@ function doPost(e) {
       if (winnerHeaders.indexOf('approved') === -1) throw new Error('ยังไม่ได้รัน setupWinners');
       winnerSheet.appendRow(winnerRow(p, winnerHeaders));
       winnerSheet.getRange(winnerSheet.getLastRow(), winnerHeaders.indexOf('approved') + 1).insertCheckboxes();
+      return json({ ok: true });
+    }
+    if (p.kind === 'profile') {
+      saveProfile(p);
       return json({ ok: true });
     }
     if (!p.title || !p.date || !p.fee || !p.province || !p.district || !p.venue) {
@@ -190,6 +202,65 @@ function setupWinners() {
     var range = sheet.getRange(2, col, rows, 1);
     range.insertCheckboxes();
     range.setValues(sheet.getRange(2, 1, rows, col - 1).getValues().map(function (r) { return [r.join('') !== '']; }));
+  }
+}
+
+// ชื่อเดียวกันถ้าต่างแค่ช่องว่าง/ตัวพิมพ์เล็กใหญ่ (ต้องตรงกับ nameKey ในเว็บ)
+function nameKey(s) {
+  return String(s).trim().toLowerCase().replace(/\s+/g, ' ');
+}
+
+// แถวในแท็บ Profiles -> [{ name, image }] (ข้ามหัวตารางและแถวว่าง)
+function profilesList(values) {
+  return values.slice(1).filter(function (r) { return r[0] && r[1]; })
+    .map(function (r) { return { name: String(r[0]), image: String(r[1]) }; });
+}
+
+// เลขแถว (เริ่ม 1 แบบ Sheet) ของชื่อนี้ในแท็บ Profiles, 0 ถ้ายังไม่มี
+function profileRow(values, name) {
+  for (var i = 1; i < values.length; i++) {
+    if (nameKey(values[i][0]) === nameKey(name)) return i + 1;
+  }
+  return 0;
+}
+
+function getProfileSheet() {
+  var ss = SpreadsheetApp.openById(WINNER_SHEET_ID);
+  var sheet = ss.getSheetByName(PROFILE_TAB);
+  if (!sheet) {
+    sheet = ss.insertSheet(PROFILE_TAB);
+    sheet.appendRow(['winner_name', 'image']);
+  }
+  return sheet;
+}
+
+// บันทึก/แทนรูปโปรไฟล์ (รูปเก่าย้ายไปถังขยะ Drive)
+function saveProfile(p) {
+  var adminKey = PropertiesService.getScriptProperties().getProperty('ADMIN_KEY');
+  if (!adminKey || p.key !== adminKey) throw new Error('รหัสผู้ดูแลไม่ถูกต้อง');
+  var name = String(p.name || '').trim().slice(0, 60);
+  if (!name) throw new Error('ไม่มีชื่อผู้ชนะ');
+  var m = /^data:image\/jpeg;base64,(.+)$/.exec(p.imageData || '');
+  if (!m) throw new Error('ไฟล์รูปไม่ถูกต้อง');
+  var bytes = Utilities.base64Decode(m[1]);
+  if (bytes.length > MAX_PROFILE_BYTES) throw new Error('รูปใหญ่เกิน 200KB');
+
+  var parent = DriveApp.getFolderById(FOLDER_ID);
+  var folders = parent.getFoldersByName(PROFILE_FOLDER);
+  var folder = folders.hasNext() ? folders.next() : parent.createFolder(PROFILE_FOLDER);
+  var file = folder.createFile(Utilities.newBlob(bytes, 'image/jpeg', new Date().getTime() + '-' + name + '.jpg'));
+  file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+  var image = 'https://lh3.googleusercontent.com/d/' + file.getId();
+
+  var sheet = getProfileSheet();
+  var values = sheet.getDataRange().getValues();
+  var row = profileRow(values, name);
+  if (row) {
+    var oldId = String(values[row - 1][1]).split('/d/')[1];
+    try { if (oldId) DriveApp.getFileById(oldId).setTrashed(true); } catch (err) { /* ไฟล์เก่าถูกลบไปแล้ว */ }
+    sheet.getRange(row, 1, 1, 2).setValues([["'" + name, image]]);
+  } else {
+    sheet.appendRow(["'" + name, image]);
   }
 }
 
