@@ -1,7 +1,7 @@
 """Run: python scripts/test_make_og.py"""
 from PIL import Image
 
-from make_og import GAP, HEIGHT, WIDTH, collage, grid
+from make_og import GAP, HEIGHT, POST_SIZE, WIDTH, collage, grid
 
 for count in range(1, 31):
     cols, rows = grid(count, 0.8)
@@ -19,5 +19,10 @@ assert canvas.size == (WIDTH, HEIGHT)
 assert canvas.getpixel((WIDTH - 1, HEIGHT - 1)) != (255, 255, 255)
 white = sum(1 for pixel in canvas.getdata() if pixel == (255, 255, 255))
 assert white > 0.3 * WIDTH * HEIGHT, white
+
+# Download button image is a 4:5 social post.
+post = collage([Image.new('RGB', (800, 800), 'white')] * 4, POST_SIZE, fill=True)
+assert post.size == (1080, 1350)
+assert post.getpixel((270, 330)) == post.getpixel((810, 980)) == (255, 255, 255)  # 2x2, tiles fill cells
 
 print('ok')
