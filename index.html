@@ -26,6 +26,7 @@
         @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
         body { background-color: #090d0b; color: #e2e8f0; }
         .neon-glow { box-shadow: 0 0 20px rgba(0, 255, 102, 0.25); }
+        :focus-visible { outline: 2px solid #00FF66; outline-offset: 2px; }
         .neon-border { border: 1px solid #1b3b2b; }
         .neon-border:focus-within { border-color: #00FF66; box-shadow: 0 0 10px rgba(0, 255, 102, 0.2); }
         ::-webkit-scrollbar { width: 8px; }
@@ -56,18 +57,18 @@
                 </a>
 
                 <!-- GLOBAL SHARE BUTTONS (META / LINE / TWITTER) -->
-                <div class="flex items-center gap-2 bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-full neon-border">
+                <div class="flex items-center gap-1 bg-black/60 backdrop-blur-md pl-3 pr-1 py-1 rounded-full neon-border">
                     <span class="text-[11px] text-gray-300 hidden md:inline font-medium">แชร์เว็บนี้:</span>
                     <!-- Line -->
-                    <button onclick="shareLine(window.location.href, 'Ministry of Beyblade X - ศูนย์รวมงานแข่งเบย์เบลด')" class="w-7 h-7 rounded-full bg-[#00B900]/20 hover:bg-[#00B900] text-[#00B900] hover:text-white flex items-center justify-center text-xs transition duration-200" title="Share to Line">
+                    <button onclick="shareLine(window.location.href, 'Ministry of Beyblade X - ศูนย์รวมงานแข่งเบย์เบลด')" class="w-11 h-11 rounded-full bg-[#00B900]/20 hover:bg-[#00B900] text-[#00B900] hover:text-white flex items-center justify-center text-sm transition duration-200" aria-label="แชร์ไปที่ LINE" title="แชร์ไปที่ LINE">
                         <i class="fa-brands fa-line"></i>
                     </button>
                     <!-- X / Twitter -->
-                    <button onclick="shareTwitter(window.location.href, 'Ministry of Beyblade X - ศูนย์รวมงานแข่งเบย์เบลด')" class="w-7 h-7 rounded-full bg-white/10 hover:bg-white text-white hover:text-black flex items-center justify-center text-xs transition duration-200" title="Share to X">
+                    <button onclick="shareTwitter(window.location.href, 'Ministry of Beyblade X - ศูนย์รวมงานแข่งเบย์เบลด')" class="w-11 h-11 rounded-full bg-white/10 hover:bg-white text-white hover:text-black flex items-center justify-center text-sm transition duration-200" aria-label="แชร์ไปที่ X" title="แชร์ไปที่ X">
                         <i class="fa-brands fa-x-twitter"></i>
                     </button>
                     <!-- Copy Link -->
-                    <button onclick="copyToClipboard(window.location.href)" class="w-7 h-7 rounded-full bg-neonGreen/20 hover:bg-neonGreen text-neonGreen hover:text-black flex items-center justify-center text-xs transition duration-200" title="Copy Link">
+                    <button onclick="copyToClipboard(window.location.href)" class="w-11 h-11 rounded-full bg-neonGreen/20 hover:bg-neonGreen text-neonGreen hover:text-black flex items-center justify-center text-sm transition duration-200" aria-label="คัดลอกลิงก์" title="คัดลอกลิงก์">
                         <i class="fa-solid fa-link"></i>
                     </button>
                 </div>
@@ -103,7 +104,7 @@
                 <div class="grid grid-cols-2 md:flex gap-3">
                     <div class="relative flex-grow col-span-2">
                         <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3.5 text-gray-400"></i>
-                        <input type="text" id="searchInput" placeholder="ค้นหาชื่อการแข่งขัน, สถานที่..." 
+                        <input type="text" id="searchInput" aria-label="ค้นหางานแข่ง" placeholder="ค้นหาชื่อการแข่งขัน, สถานที่..." 
                             class="w-full bg-[#090d0b] text-white pl-10 pr-4 py-2.5 rounded-xl text-sm neon-border focus:outline-none">
                     </div>
                     <!-- รายชื่อจังหวัดสร้างจากข้อมูลจริงใน fillProvinces() -->
@@ -132,7 +133,10 @@
             </div>
 
             <div id="eventListContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                <!-- Data cards will load here -->
+                <!-- โครงการ์ดระหว่างโหลด: renderTournaments() เขียนทับ -->
+                <div class="bg-cardBg rounded-2xl neon-border aspect-[3/4] animate-pulse"></div>
+                <div class="bg-cardBg rounded-2xl neon-border aspect-[3/4] animate-pulse hidden md:block"></div>
+                <div class="bg-cardBg rounded-2xl neon-border aspect-[3/4] animate-pulse hidden lg:block"></div>
             </div>
 
             <!-- WINNER COMBOS -->
@@ -155,7 +159,7 @@
                     <p id="usageNote" class="text-xs text-gray-400">กำลังโหลดข้อมูล...</p>
                 </div>
                 <div id="usageChart" class="space-y-2"></div>
-                <button id="usageMoreBtn" class="hidden w-full bg-[#1b3b2b] text-neonGreen font-semibold py-2 rounded-xl text-xs hover:bg-neonGreen hover:text-black transition">
+                <button id="usageMoreBtn" class="hidden w-full bg-[#1b3b2b] text-neonGreen font-semibold min-h-[44px] rounded-xl text-xs hover:bg-neonGreen hover:text-black transition">
                     ดูทั้งหมด
                 </button>
             </div>
@@ -173,7 +177,7 @@
             </div>
 
             <div id="comboListContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
-            <button id="comboMoreBtn" class="hidden w-full bg-[#1b3b2b] text-neonGreen font-semibold py-2.5 rounded-xl text-sm hover:bg-neonGreen hover:text-black transition">
+            <button id="comboMoreBtn" class="hidden w-full bg-[#1b3b2b] text-neonGreen font-semibold min-h-[44px] rounded-xl text-sm hover:bg-neonGreen hover:text-black transition">
                 ดูเพิ่มเติม
             </button>
 
@@ -195,16 +199,16 @@
                 <form id="tournamentForm" class="space-y-4">
                     <!-- Title -->
                     <div>
-                        <label class="block text-xs font-semibold text-gray-300 mb-1">ชื่องานแข่งขัน</label>
+                        <label for="formTitle" class="block text-xs font-semibold text-gray-300 mb-1">ชื่องานแข่งขัน</label>
                         <input type="text" id="formTitle" required placeholder="เช่น B2X Monthly Championship #3"
                             class="w-full bg-[#090d0b] text-white px-3.5 py-2.5 rounded-xl text-sm neon-border focus:outline-none">
                     </div>
 
                     <!-- Image Upload / URL -->
                     <div>
-                        <label class="block text-xs font-semibold text-gray-300 mb-1">รูปภาพโปรโมทงาน (อัปโหลดหรือลิงก์)</label>
+                        <label for="formImageFile" class="block text-xs font-semibold text-gray-300 mb-1">รูปภาพโปรโมทงาน (อัปโหลดหรือลิงก์)</label>
                         <input type="file" id="formImageFile" accept="image/*" class="w-full text-xs text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-neonGreen file:text-black hover:file:bg-emeraldHover cursor-pointer mb-2">
-                        <input type="text" id="formImage" placeholder="หรือวาง URL รูปภาพที่นี่"
+                        <input type="text" id="formImage" aria-label="URL รูปภาพโปรโมทงาน" placeholder="หรือวาง URL รูปภาพที่นี่"
                             class="w-full bg-[#090d0b] text-white px-3.5 py-2 rounded-xl text-xs neon-border focus:outline-none">
                         <!-- Image Preview -->
                         <div id="imagePreviewContainer" class="mt-2 hidden">
@@ -214,7 +218,7 @@
 
                     <!-- Date -->
                     <div>
-                        <label class="block text-xs font-semibold text-gray-300 mb-1">วันที่แข่งขัน</label>
+                        <label for="formDate" class="block text-xs font-semibold text-gray-300 mb-1">วันที่แข่งขัน</label>
                         <div class="flex items-center gap-2">
                             <input type="date" id="formDate" required max="2100-12-31"
                                 title="กรอกปีเป็น ค.ศ. เช่น 2026 (ไม่ใช่ พ.ศ. 2569)"
@@ -225,29 +229,29 @@
 
                     <!-- Time Slots -->
                     <div>
-                        <label class="block text-xs font-semibold text-gray-300 mb-1 flex justify-between">
+                        <div class="text-xs font-semibold text-gray-300 mb-1 flex justify-between items-center">
                             <span>รอบเวลาแข่งขัน (3 รอบ/วัน)</span>
-                            <button type="button" id="addTimeSlotBtn" class="text-neonGreen text-xs hover:underline"><i class="fa-solid fa-plus"></i> เพิ่มรอบ</button>
-                        </label>
+                            <button type="button" id="addTimeSlotBtn" class="text-neonGreen text-xs hover:underline min-h-[44px] px-2"><i class="fa-solid fa-plus"></i> เพิ่มรอบ</button>
+                        </div>
                         <div id="timeSlotsContainer" class="space-y-2">
                             <div class="flex gap-2 items-center">
-                                <input type="text" value="รอบเช้า (10:00 - 12:00)" class="time-input w-full bg-[#090d0b] text-white px-3 py-2 rounded-xl text-xs neon-border focus:outline-none">
-                                <button type="button" onclick="this.parentElement.remove()" class="text-red-400 hover:text-red-300 px-2 text-xs"><i class="fa-solid fa-trash"></i></button>
+                                <input type="text" value="รอบเช้า (10:00 - 12:00)" aria-label="รอบเวลาแข่งขัน" class="time-input w-full bg-[#090d0b] text-white px-3 py-2 rounded-xl text-xs neon-border focus:outline-none">
+                                <button type="button" onclick="this.parentElement.remove()" aria-label="ลบรอบนี้" class="text-red-400 hover:text-red-300 w-11 h-11 shrink-0 text-sm"><i class="fa-solid fa-trash"></i></button>
                             </div>
                             <div class="flex gap-2 items-center">
-                                <input type="text" value="รอบบ่าย (13:30 - 15:30)" class="time-input w-full bg-[#090d0b] text-white px-3 py-2 rounded-xl text-xs neon-border focus:outline-none">
-                                <button type="button" onclick="this.parentElement.remove()" class="text-red-400 hover:text-red-300 px-2 text-xs"><i class="fa-solid fa-trash"></i></button>
+                                <input type="text" value="รอบบ่าย (13:30 - 15:30)" aria-label="รอบเวลาแข่งขัน" class="time-input w-full bg-[#090d0b] text-white px-3 py-2 rounded-xl text-xs neon-border focus:outline-none">
+                                <button type="button" onclick="this.parentElement.remove()" aria-label="ลบรอบนี้" class="text-red-400 hover:text-red-300 w-11 h-11 shrink-0 text-sm"><i class="fa-solid fa-trash"></i></button>
                             </div>
                             <div class="flex gap-2 items-center">
-                                <input type="text" value="รอบเย็น (16:30 - 18:30)" class="time-input w-full bg-[#090d0b] text-white px-3 py-2 rounded-xl text-xs neon-border focus:outline-none">
-                                <button type="button" onclick="this.parentElement.remove()" class="text-red-400 hover:text-red-300 px-2 text-xs"><i class="fa-solid fa-trash"></i></button>
+                                <input type="text" value="รอบเย็น (16:30 - 18:30)" aria-label="รอบเวลาแข่งขัน" class="time-input w-full bg-[#090d0b] text-white px-3 py-2 rounded-xl text-xs neon-border focus:outline-none">
+                                <button type="button" onclick="this.parentElement.remove()" aria-label="ลบรอบนี้" class="text-red-400 hover:text-red-300 w-11 h-11 shrink-0 text-sm"><i class="fa-solid fa-trash"></i></button>
                             </div>
                         </div>
                     </div>
 
                     <!-- Fee -->
                     <div>
-                        <label class="block text-xs font-semibold text-gray-300 mb-1">ค่าสมัคร (บาท หรือ ฟรี)</label>
+                        <label for="formFee" class="block text-xs font-semibold text-gray-300 mb-1">ค่าสมัคร (บาท หรือ ฟรี)</label>
                         <input type="text" id="formFee" required placeholder="เช่น ฟรี หรือ 100 บาท"
                             class="w-full bg-[#090d0b] text-white px-3.5 py-2.5 rounded-xl text-sm neon-border focus:outline-none">
                     </div>
@@ -255,46 +259,46 @@
                     <!-- Location -->
                     <div class="grid grid-cols-2 gap-2">
                         <div>
-                            <label class="block text-xs font-semibold text-gray-300 mb-1">จังหวัด</label>
+                            <label for="formProvince" class="block text-xs font-semibold text-gray-300 mb-1">จังหวัด</label>
                             <input type="text" id="formProvince" required list="provinceList" placeholder="เช่น กรุงเทพมหานคร"
                                 class="w-full bg-[#090d0b] text-white px-3.5 py-2.5 rounded-xl text-sm neon-border focus:outline-none">
                         </div>
                         <div>
                             <datalist id="provinceList"></datalist>
-                            <label class="block text-xs font-semibold text-gray-300 mb-1">เขต / อำเภอ</label>
+                            <label for="formDistrict" class="block text-xs font-semibold text-gray-300 mb-1">เขต / อำเภอ</label>
                             <input type="text" id="formDistrict" required placeholder="เช่น ปทุมวัน"
                                 class="w-full bg-[#090d0b] text-white px-3.5 py-2.5 rounded-xl text-sm neon-border focus:outline-none">
                         </div>
                     </div>
 
                     <div>
-                        <label class="block text-xs font-semibold text-gray-300 mb-1">สถานที่จัดงาน (ชื่อร้าน / ที่อยู่)</label>
+                        <label for="formVenue" class="block text-xs font-semibold text-gray-300 mb-1">สถานที่จัดงาน (ชื่อร้าน / ที่อยู่)</label>
                         <input type="text" id="formVenue" required placeholder="เช่น ร้าน XYZ ชั้น 3 สยามสแควร์"
                             class="w-full bg-[#090d0b] text-white px-3.5 py-2.5 rounded-xl text-sm neon-border focus:outline-none">
                     </div>
 
                     <div>
-                        <label class="block text-xs font-semibold text-gray-300 mb-1">ลิงก์ Google Maps (ถ้ามี)</label>
+                        <label for="formMapLink" class="block text-xs font-semibold text-gray-300 mb-1">ลิงก์ Google Maps (ถ้ามี)</label>
                         <input type="url" id="formMapLink" placeholder="https://maps.app.goo.gl/..."
                             class="w-full bg-[#090d0b] text-white px-3.5 py-2.5 rounded-xl text-sm neon-border focus:outline-none">
                     </div>
 
                     <!-- Rewards & Link -->
                     <div>
-                        <label class="block text-xs font-semibold text-gray-300 mb-1">ของรางวัล / รายละเอียดเพิ่มเติม</label>
+                        <label for="formRewards" class="block text-xs font-semibold text-gray-300 mb-1">ของรางวัล / รายละเอียดเพิ่มเติม</label>
                         <input type="text" id="formRewards" placeholder="เช่น สิทธิ์ชิงแชมป์, Beyblade หายาก"
                             class="w-full bg-[#090d0b] text-white px-3.5 py-2.5 rounded-xl text-sm neon-border focus:outline-none">
                     </div>
 
                     <div>
-                        <label class="block text-xs font-semibold text-gray-300 mb-1">ลิงก์สมัคร / เพจผู้จัด</label>
+                        <label for="formLink" class="block text-xs font-semibold text-gray-300 mb-1">ลิงก์สมัคร / เพจผู้จัด</label>
                         <input type="url" id="formLink" placeholder="https://facebook.com/..."
                             class="w-full bg-[#090d0b] text-white px-3.5 py-2.5 rounded-xl text-sm neon-border focus:outline-none">
                     </div>
 
                     <!-- Submit Button -->
                     <button type="submit" id="submitBtn" class="w-full bg-neonGreen text-black font-bold py-3 rounded-xl hover:bg-white transition shadow-lg text-sm tracking-wide flex items-center justify-center gap-2">
-                        <i class="fa-solid fa-cloud-arrow-up"></i> บันทึกงานแข่งลง Google Sheets
+                        <i class="fa-solid fa-cloud-arrow-up"></i> ส่งงานแข่ง
                     </button>
                 </form>
             </div>
@@ -329,7 +333,7 @@
                     <h2 class="text-base font-bold">ส่งคอมโบผู้ชนะ</h2>
                     <p class="text-xs text-gray-400">แสดงบนเว็บหลังผู้ดูแลอนุมัติ</p>
                 </div>
-                <button type="button" id="winnerCloseBtn" class="text-gray-400 hover:text-white px-2" title="ปิด"><i class="fa-solid fa-xmark"></i></button>
+                <button type="button" id="winnerCloseBtn" class="text-gray-400 hover:text-white w-11 h-11 shrink-0" aria-label="ปิด"><i class="fa-solid fa-xmark"></i></button>
             </div>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <label class="text-xs font-semibold text-gray-300 space-y-1 block">
@@ -363,21 +367,21 @@
                 <span class="text-xs font-semibold text-gray-300">คอมโบ (Blade / Ratchet / Bit)</span>
                 <div class="grid grid-cols-[1.25rem_2fr_1fr_1fr] gap-2 items-center">
                     <span class="text-neonGreen font-bold text-sm">1</span>
-                    <input name="blade1" list="bladeList" maxlength="40" placeholder="Blade" required class="w-full bg-[#090d0b] text-white px-3 py-2 rounded-xl text-sm neon-border focus:outline-none">
-                    <input name="ratchet1" list="ratchetList" maxlength="40" placeholder="1-60 หรือ -" class="w-full bg-[#090d0b] text-white px-3 py-2 rounded-xl text-sm neon-border focus:outline-none">
-                    <input name="bit1" list="bitList" maxlength="40" placeholder="Bit" required class="w-full bg-[#090d0b] text-white px-3 py-2 rounded-xl text-sm neon-border focus:outline-none">
+                    <input name="blade1" aria-label="Blade คอมโบ 1" list="bladeList" maxlength="40" placeholder="Blade" required class="w-full bg-[#090d0b] text-white px-3 py-2 rounded-xl text-sm neon-border focus:outline-none">
+                    <input name="ratchet1" aria-label="Ratchet คอมโบ 1" list="ratchetList" maxlength="40" placeholder="1-60 หรือ -" class="w-full bg-[#090d0b] text-white px-3 py-2 rounded-xl text-sm neon-border focus:outline-none">
+                    <input name="bit1" aria-label="Bit คอมโบ 1" list="bitList" maxlength="40" placeholder="Bit" required class="w-full bg-[#090d0b] text-white px-3 py-2 rounded-xl text-sm neon-border focus:outline-none">
                 </div>
                 <div class="grid grid-cols-[1.25rem_2fr_1fr_1fr] gap-2 items-center">
                     <span class="text-neonGreen font-bold text-sm">2</span>
-                    <input name="blade2" list="bladeList" maxlength="40" placeholder="Blade" class="w-full bg-[#090d0b] text-white px-3 py-2 rounded-xl text-sm neon-border focus:outline-none">
-                    <input name="ratchet2" list="ratchetList" maxlength="40" placeholder="1-60 หรือ -" class="w-full bg-[#090d0b] text-white px-3 py-2 rounded-xl text-sm neon-border focus:outline-none">
-                    <input name="bit2" list="bitList" maxlength="40" placeholder="Bit" class="w-full bg-[#090d0b] text-white px-3 py-2 rounded-xl text-sm neon-border focus:outline-none">
+                    <input name="blade2" aria-label="Blade คอมโบ 2" list="bladeList" maxlength="40" placeholder="Blade" class="w-full bg-[#090d0b] text-white px-3 py-2 rounded-xl text-sm neon-border focus:outline-none">
+                    <input name="ratchet2" aria-label="Ratchet คอมโบ 2" list="ratchetList" maxlength="40" placeholder="1-60 หรือ -" class="w-full bg-[#090d0b] text-white px-3 py-2 rounded-xl text-sm neon-border focus:outline-none">
+                    <input name="bit2" aria-label="Bit คอมโบ 2" list="bitList" maxlength="40" placeholder="Bit" class="w-full bg-[#090d0b] text-white px-3 py-2 rounded-xl text-sm neon-border focus:outline-none">
                 </div>
                 <div class="grid grid-cols-[1.25rem_2fr_1fr_1fr] gap-2 items-center">
                     <span class="text-neonGreen font-bold text-sm">3</span>
-                    <input name="blade3" list="bladeList" maxlength="40" placeholder="Blade" class="w-full bg-[#090d0b] text-white px-3 py-2 rounded-xl text-sm neon-border focus:outline-none">
-                    <input name="ratchet3" list="ratchetList" maxlength="40" placeholder="1-60 หรือ -" class="w-full bg-[#090d0b] text-white px-3 py-2 rounded-xl text-sm neon-border focus:outline-none">
-                    <input name="bit3" list="bitList" maxlength="40" placeholder="Bit" class="w-full bg-[#090d0b] text-white px-3 py-2 rounded-xl text-sm neon-border focus:outline-none">
+                    <input name="blade3" aria-label="Blade คอมโบ 3" list="bladeList" maxlength="40" placeholder="Blade" class="w-full bg-[#090d0b] text-white px-3 py-2 rounded-xl text-sm neon-border focus:outline-none">
+                    <input name="ratchet3" aria-label="Ratchet คอมโบ 3" list="ratchetList" maxlength="40" placeholder="1-60 หรือ -" class="w-full bg-[#090d0b] text-white px-3 py-2 rounded-xl text-sm neon-border focus:outline-none">
+                    <input name="bit3" aria-label="Bit คอมโบ 3" list="bitList" maxlength="40" placeholder="Bit" class="w-full bg-[#090d0b] text-white px-3 py-2 rounded-xl text-sm neon-border focus:outline-none">
                 </div>
             </div>
                 <label class="text-xs font-semibold text-gray-300 space-y-1 block">
@@ -389,15 +393,37 @@
         <datalist id="bladeList"></datalist><datalist id="ratchetList"></datalist><datalist id="bitList"></datalist>
     </dialog>
 
+    <!-- TOAST: ข้อความแจ้งผลแทน alert() -->
+    <div id="toast" popover="manual" role="status" aria-live="polite" class="inset-auto bottom-4 left-4 right-4 mx-auto my-0 w-fit max-w-md px-4 py-3 rounded-xl text-sm font-semibold shadow-2xl border-0"></div>
+
     <!-- JAVASCRIPT LOGIC -->
     <script>
         // ⚠️ นำ Web App URL ที่ได้จากการ Deploy Google Apps Script มาวางตรงนี้
         const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwgWtnmKymY1L0RnL_2S9DmYinSyC6odjiGeRlbU50dohHIZW_rMTaNbD8kiYlef_0b/exec';
 
-        const DEFAULT_IMAGE = 'https://images.unsplash.com/photo-1511512578047-dfb367046420?w=600';
+        const DEFAULT_IMAGE = 'logo.png'; // รูปโปสเตอร์เสีย/ไม่มี: ใช้มาสคอตของเว็บ
 
         let tournaments = [];
         let imageData = ''; // รูปที่อัปโหลด (ย่อแล้ว) ในรูปแบบ data URL
+
+        // แจ้งผลแบบไม่บล็อกหน้าจอ (แทน alert)
+        function toast(message, isError = false) {
+            const t = document.getElementById('toast');
+            t.textContent = message;
+            t.classList.toggle('bg-red-600', isError);
+            t.classList.toggle('text-white', isError);
+            t.classList.toggle('bg-neonGreen', !isError);
+            t.classList.toggle('text-black', !isError);
+            try { t.hidePopover(); t.showPopover(); } catch {}
+            clearTimeout(toast.timer);
+            toast.timer = setTimeout(() => { try { t.hidePopover(); } catch {} }, isError ? 6000 : 3000);
+        }
+
+        // ค่าสมัครกรอกอิสระ (เช่น "1ชีวิต 150 บาท") ถ้าเป็นตัวเลขล้วนค่อยเติมหน่วย
+        function feeText(fee) {
+            const v = String(fee ?? '').trim();
+            return /^\d+(\.\d+)?$/.test(v) ? v + ' บาท' : v;
+        }
 
         // กันข้อความจาก Sheet ทำให้ HTML พัง / XSS
         function esc(v) {
@@ -446,9 +472,10 @@
 
         function copyToClipboard(text) {
             navigator.clipboard.writeText(text).then(() => {
-                alert('คัดลอกลิงก์เรียบร้อยแล้ว!');
+                toast('คัดลอกลิงก์แล้ว');
             }).catch(err => {
                 console.error('Could not copy text: ', err);
+                toast('คัดลอกลิงก์ไม่ได้ ลองคัดลอกจากแถบที่อยู่ของเบราว์เซอร์แทน', true);
             });
         }
 
@@ -468,7 +495,7 @@
                 imagePreview.src = imageData;
                 imagePreviewContainer.classList.remove('hidden');
             } catch (err) {
-                alert('อ่านไฟล์รูปไม่ได้ กรุณาเลือกไฟล์รูปภาพ');
+                toast('อ่านไฟล์รูปไม่ได้ กรุณาเลือกไฟล์รูปภาพ (JPG หรือ PNG)', true);
                 this.value = '';
             }
         });
@@ -490,8 +517,8 @@
             const div = document.createElement('div');
             div.className = 'flex gap-2 items-center';
             div.innerHTML = `
-                <input type="text" placeholder="ระบุรอบเวลาเพิ่มเติม" class="time-input w-full bg-[#090d0b] text-white px-3 py-2 rounded-xl text-xs neon-border focus:outline-none">
-                <button type="button" onclick="this.parentElement.remove()" class="text-red-400 hover:text-red-300 px-2 text-xs"><i class="fa-solid fa-trash"></i></button>
+                <input type="text" placeholder="ระบุรอบเวลาเพิ่มเติม" aria-label="รอบเวลาแข่งขัน" class="time-input w-full bg-[#090d0b] text-white px-3 py-2 rounded-xl text-xs neon-border focus:outline-none">
+                <button type="button" onclick="this.parentElement.remove()" aria-label="ลบรอบนี้" class="text-red-400 hover:text-red-300 w-11 h-11 shrink-0 text-sm"><i class="fa-solid fa-trash"></i></button>
             `;
             container.appendChild(div);
         });
@@ -541,6 +568,7 @@
             } catch (error) {
                 console.error('Error fetching data:', error);
                 countBadge.textContent = 'โหลดข้อมูลไม่สำเร็จ';
+                container.innerHTML = `<div class="md:col-span-2 lg:col-span-3 bg-cardBg p-6 rounded-2xl neon-border text-center space-y-3"><p class="text-sm text-gray-300">โหลดข้อมูลไม่สำเร็จ อาจเป็นเพราะอินเทอร์เน็ตหรือเซิร์ฟเวอร์ช้า</p><button type="button" onclick="fetchTournaments()" class="bg-neonGreen text-black font-bold px-4 min-h-[44px] rounded-xl text-sm hover:bg-white transition"><i class="fa-solid fa-rotate-right"></i> ลองใหม่</button></div>`;
             }
         }
 
@@ -574,7 +602,7 @@
                         <div class="aspect-[4/3] w-full relative overflow-hidden bg-black">
                             <img src="${esc(event.image || DEFAULT_IMAGE)}" ${i > 1 ? 'loading="lazy"' : ''} decoding="async" referrerpolicy="no-referrer" onerror="this.onerror=null; this.src='${DEFAULT_IMAGE}';" alt="${esc(event.title)}" class="w-full h-full object-contain">
                             <div class="absolute top-3 left-3 bg-black/70 backdrop-blur-md px-3 py-1 rounded-full text-xs font-semibold text-neonGreen neon-border">
-                                ${esc(event.fee)}
+                                ${esc(feeText(event.fee))}
                             </div>
                         </div>
                         <div class="p-4 space-y-2">
@@ -587,9 +615,9 @@
                                 ${event.mapLink ? `<a href="${esc(event.mapLink)}" target="_blank" rel="noopener" class="text-neonGreen hover:underline whitespace-nowrap">แผนที่</a>` : ''}
                             </div>
                             <div class="space-y-1 pt-1">
-                                <span class="text-[11px] font-semibold text-gray-400"><i class="fa-regular fa-clock text-neonGreen"></i> รอบเวลาแข่งขัน:</span>
+                                <span class="text-xs font-semibold text-gray-400"><i class="fa-regular fa-clock text-neonGreen"></i> รอบเวลาแข่งขัน:</span>
                                 <div class="flex flex-wrap gap-1">
-                                    ${(Array.isArray(event.times) ? event.times : []).map(t => `<span class="bg-[#090d0b] text-gray-300 text-[10px] px-2 py-0.5 rounded-md neon-border">${esc(t)}</span>`).join('')}
+                                    ${(Array.isArray(event.times) ? event.times : []).map(t => `<span class="bg-[#090d0b] text-gray-300 text-xs px-2 py-0.5 rounded-md neon-border">${esc(t)}</span>`).join('')}
                                 </div>
                             </div>
                             ${event.rewards ? `<div class="text-xs text-yellow-400 pt-1"><i class="fa-solid fa-trophy"></i> ${esc(event.rewards)}</div>` : ''}
@@ -605,13 +633,13 @@
                         </div>
 
                         <!-- CARD SOCIAL SHARE BAR -->
-                        <div class="flex items-center justify-between bg-[#090d0b] px-3 py-1.5 rounded-xl text-[11px] text-gray-400 border border-borderGreen">
+                        <div class="flex items-center justify-between bg-[#090d0b] pl-3 pr-1 rounded-xl text-xs text-gray-400 border border-borderGreen">
                             <span>แชร์งานนี้:</span>
-                            <div class="flex gap-2">
-                                <button onclick="shareMeta(${linkArg}, ${textArg})" class="hover:text-[#1877F2] transition" title="Share Meta / FB"><i class="fa-brands fa-facebook-f"></i></button>
-                                <button onclick="shareLine(${linkArg}, ${textArg})" class="hover:text-[#00B900] transition" title="Share Line"><i class="fa-brands fa-line"></i></button>
-                                <button onclick="shareTwitter(${linkArg}, ${textArg})" class="hover:text-white transition" title="Share X"><i class="fa-brands fa-x-twitter"></i></button>
-                                <button onclick="copyToClipboard(${linkArg})" class="hover:text-neonGreen transition" title="Copy Link"><i class="fa-solid fa-link"></i></button>
+                            <div class="flex">
+                                <button onclick="shareMeta(${linkArg}, ${textArg})" class="w-11 h-11 inline-flex items-center justify-center text-sm hover:text-[#1877F2] transition" aria-label="แชร์งานนี้ไปที่ Facebook" title="แชร์ไปที่ Facebook"><i class="fa-brands fa-facebook-f"></i></button>
+                                <button onclick="shareLine(${linkArg}, ${textArg})" class="w-11 h-11 inline-flex items-center justify-center text-sm hover:text-[#00B900] transition" aria-label="แชร์งานนี้ไปที่ LINE" title="แชร์ไปที่ LINE"><i class="fa-brands fa-line"></i></button>
+                                <button onclick="shareTwitter(${linkArg}, ${textArg})" class="w-11 h-11 inline-flex items-center justify-center text-sm hover:text-white transition" aria-label="แชร์งานนี้ไปที่ X" title="แชร์ไปที่ X"><i class="fa-brands fa-x-twitter"></i></button>
+                                <button onclick="copyToClipboard(${linkArg})" class="w-11 h-11 inline-flex items-center justify-center text-sm hover:text-neonGreen transition" aria-label="คัดลอกลิงก์งานนี้" title="คัดลอกลิงก์"><i class="fa-solid fa-link"></i></button>
                             </div>
                         </div>
                     </div>
@@ -624,7 +652,7 @@
             e.preventDefault();
 
             if (WEB_APP_URL.includes('PASTE_YOUR')) {
-                alert('กรุณาใส่ Google Apps Script URL ก่อนบันทึกข้อมูล');
+                toast('ยังไม่ได้ตั้งค่า Google Apps Script URL', true);
                 return;
             }
 
@@ -661,17 +689,17 @@
                 const result = await response.json();
                 if (!result.ok) throw new Error(result.error);
 
-                alert('ส่งข้อมูลงานแข่งสำเร็จ! งานจะแสดงบนเว็บหลังผู้ดูแลอนุมัติ');
+                toast('ส่งงานแข่งแล้ว! จะแสดงบนเว็บหลังผู้ดูแลอนุมัติ');
                 document.getElementById('tournamentForm').reset();
                 organizerDialog.close();
                 imageData = '';
                 imagePreviewContainer.classList.add('hidden');
             } catch (error) {
                 console.error('Error saving data:', error);
-                alert('เกิดข้อผิดพลาดในการบันทึกข้อมูล: ' + error.message);
+                toast('ส่งข้อมูลไม่สำเร็จ ข้อมูลที่กรอกยังอยู่ครบ กรุณากดส่งอีกครั้ง', true);
             } finally {
                 submitBtn.disabled = false;
-                submitBtn.innerHTML = `<i class="fa-solid fa-cloud-arrow-up"></i> บันทึกงานแข่งลง Google Sheets`;
+                submitBtn.innerHTML = `<i class="fa-solid fa-cloud-arrow-up"></i> ส่งงานแข่ง`;
             }
         });
 
@@ -757,6 +785,7 @@
                 console.error('Error fetching combos:', error);
                 document.getElementById('comboCount').textContent = 'โหลดข้อมูลไม่สำเร็จ';
                 document.getElementById('usageNote').textContent = 'โหลดข้อมูลไม่สำเร็จ';
+                document.getElementById('comboListContainer').innerHTML = `<div class="md:col-span-2 lg:col-span-3 bg-cardBg p-6 rounded-2xl neon-border text-center space-y-3"><p class="text-sm text-gray-300">โหลดข้อมูลไม่สำเร็จ อาจเป็นเพราะอินเทอร์เน็ตหรือเซิร์ฟเวอร์ช้า</p><button type="button" onclick="fetchCombos()" class="bg-neonGreen text-black font-bold px-4 min-h-[44px] rounded-xl text-sm hover:bg-white transition"><i class="fa-solid fa-rotate-right"></i> ลองใหม่</button></div>`;
             }
         }
 
@@ -876,12 +905,12 @@
                 });
                 const result = await response.json();
                 if (!result.ok) throw new Error(result.error);
-                alert('ส่งคอมโบผู้ชนะแล้ว! จะแสดงบนเว็บหลังผู้ดูแลอนุมัติ');
+                toast('ส่งคอมโบผู้ชนะแล้ว! จะแสดงบนเว็บหลังผู้ดูแลอนุมัติ');
                 winnerForm.reset();
                 winnerDialog.close();
             } catch (error) {
                 console.error('Error saving winner:', error);
-                alert('ส่งข้อมูลไม่สำเร็จ: ' + error.message);
+                toast('ส่งข้อมูลไม่สำเร็จ ข้อมูลที่กรอกยังอยู่ครบ กรุณากดส่งอีกครั้ง', true);
             } finally {
                 submitBtn.disabled = false;
                 submitBtn.textContent = 'ส่งข้อมูล';
