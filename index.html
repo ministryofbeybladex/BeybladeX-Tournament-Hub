@@ -11,31 +11,19 @@
     <meta property="og:image" content="https://ministryofbeybladex.github.io/BeybladeX-Tournament-Hub/og/collage-3f851a7df2.jpg">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="icon" type="image/png" href="favicon.png">
+    <link rel="preload" as="image" href="hero-1440.jpg" imagesrcset="hero-768.jpg 768w, hero-1440.jpg 1440w" imagesizes="(max-width: 1280px) 100vw, 1280px">
     <!-- Font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <!-- FontAwesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        darkBg: '#090d0b',
-                        cardBg: '#121a15',
-                        borderGreen: '#1b3b2b',
-                        neonGreen: '#00FF66',
-                        emeraldHover: '#059669',
-                    },
-                    fontFamily: {
-                        sans: ['Prompt', 'sans-serif'],
-                    }
-                }
-            }
-        }
-    </script>
+    <!-- Tailwind CSS: precompiled, see tailwind.config.js. Keep after FontAwesome so utilities win -->
+    <link rel="stylesheet" href="tailwind.css">
     <style>
+        html { scroll-behavior: smooth; }
+        @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
         body { background-color: #090d0b; color: #e2e8f0; }
         .neon-glow { box-shadow: 0 0 20px rgba(0, 255, 102, 0.25); }
         .neon-border { border: 1px solid #1b3b2b; }
@@ -52,15 +40,15 @@
     <header class="w-full bg-black border-b border-borderGreen relative overflow-hidden shadow-2xl">
         <div class="max-w-7xl mx-auto h-56 md:h-72 relative">
             <!-- Banner Background Image -->
-            <img src="GPFinal2026.jpg" alt="Ministry of Beyblade X" class="w-full h-full object-cover opacity-85">
+            <img src="hero-1440.jpg" srcset="hero-768.jpg 768w, hero-1440.jpg 1440w" sizes="(max-width: 1280px) 100vw, 1280px" width="1440" height="533" fetchpriority="high" alt="" class="w-full h-full object-cover opacity-85">
             <div class="absolute inset-0 bg-gradient-to-t from-[#090d0b] via-transparent to-black/60"></div>
             
             <!-- TOP BAR: LOGO (TOP-LEFT) & SOCIAL SHARE (TOP-RIGHT) -->
             <div class="absolute top-4 left-4 right-4 flex justify-between items-center z-10">
                 <!-- LOGO ON TOP LEFT -->
                 <a href="#" class="flex items-center gap-3 group">
-                    <!-- หากมีไฟล์ logo.png สามารถเปลี่ยน src ใน tag img ด้านล่างได้เลย -->
-                    <img src="logo.png" onError="this.onerror=null; this.src='https://cdn-icons-png.flaticon.com/512/3593/3593452.png';" alt="Logo" class="w-10 h-10 md:w-12 md:h-12 object-contain drop-shadow-[0_0_8px_rgba(0,255,102,0.6)] group-hover:scale-105 transition duration-300">
+                    <!-- logo-96.png ย่อมาจาก logo.png (ต้นฉบับ) -->
+                    <img src="logo-96.png" width="96" height="96" alt="Ministry of Beyblade X" class="w-10 h-10 md:w-12 md:h-12 object-contain drop-shadow-[0_0_8px_rgba(0,255,102,0.6)] group-hover:scale-105 transition duration-300">
                     <div class="hidden sm:block">
                         <span class="text-xs font-bold text-neonGreen tracking-wider block leading-none">MINISTRY OF</span>
                         <span class="text-base font-extrabold text-white tracking-widest block leading-none">BEYBLADE X</span>
@@ -88,38 +76,41 @@
             <!-- HEADER TEXT (BOTTOM) -->
             <div class="absolute bottom-4 left-4 right-4 flex flex-col md:flex-row justify-between items-start md:items-end">
                 <div>
-                    <span class="bg-neonGreen text-black text-[10px] md:text-xs font-bold px-3 py-0.5 rounded-full uppercase tracking-widest shadow-lg">Official Tournament Hub</span>
-                    <h1 class="text-xl md:text-3xl font-extrabold text-white mt-1 tracking-wide drop-shadow-md">ตารางการแข่งขัน BEYBLADE X</h1>
+                    <h1 class="text-xl md:text-3xl font-extrabold text-white tracking-wide drop-shadow-md">ตารางการแข่งขัน BEYBLADE X</h1>
                     <p class="text-xs text-gray-300">อัปเดตงานแข่งรายเดือน พร้อมระบบลงทะเบียนสำหรับผู้จัดงาน</p>
                 </div>
             </div>
         </div>
     </header>
 
+    <!-- SECTION NAV: ติดด้านบนตอนเลื่อน -->
+    <nav aria-label="ส่วนต่างๆ ของหน้า" class="sticky top-0 z-30 bg-darkBg/90 backdrop-blur-md border-b border-borderGreen">
+        <div class="max-w-7xl mx-auto px-2 sm:px-4 md:px-6 flex items-center gap-1 overflow-x-auto [scrollbar-width:none] text-sm font-semibold whitespace-nowrap">
+            <a href="#events" class="px-2 sm:px-3 min-h-[44px] inline-flex items-center gap-2 text-gray-300 hover:text-neonGreen transition"><i class="fa-solid fa-calendar-days hidden sm:inline"></i> งานแข่ง</a>
+            <a href="#stats" class="px-2 sm:px-3 min-h-[44px] inline-flex items-center gap-2 text-gray-300 hover:text-neonGreen transition"><i class="fa-solid fa-chart-simple hidden sm:inline"></i> สถิติคอมโบ</a>
+            <a href="#champions" class="px-2 sm:px-3 min-h-[44px] inline-flex items-center gap-2 text-gray-300 hover:text-neonGreen transition"><i class="fa-solid fa-trophy hidden sm:inline"></i> แชมป์</a>
+            <button type="button" id="organizerBtn" class="ml-auto shrink-0 my-1.5 bg-neonGreen text-black font-bold px-3 sm:px-4 min-h-[36px] rounded-xl hover:bg-white transition inline-flex items-center gap-2"><i class="fa-solid fa-plus"></i> จัดงานแข่ง</button>
+        </div>
+    </nav>
+
     <!-- MAIN CONTAINER -->
-    <main class="max-w-7xl mx-auto w-full p-4 md:p-6 grid grid-cols-1 lg:grid-cols-3 gap-6 flex-grow">
-        
-        <!-- LEFT & CENTER: LIST & FILTERS -->
-        <section class="lg:col-span-2 space-y-6">
-            
+    <main class="max-w-7xl mx-auto w-full p-4 md:p-6 flex-grow">
+
+        <section class="space-y-6">
+
             <!-- SEARCH & FILTER BAR -->
-            <div class="bg-cardBg p-4 rounded-2xl neon-border shadow-xl space-y-4">
-                <div class="flex flex-col md:flex-row gap-3">
-                    <div class="relative flex-grow">
+            <div id="events" class="scroll-mt-20 bg-cardBg p-4 rounded-2xl neon-border shadow-xl space-y-4">
+                <div class="grid grid-cols-2 md:flex gap-3">
+                    <div class="relative flex-grow col-span-2">
                         <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3.5 text-gray-400"></i>
                         <input type="text" id="searchInput" placeholder="ค้นหาชื่อการแข่งขัน, สถานที่..." 
                             class="w-full bg-[#090d0b] text-white pl-10 pr-4 py-2.5 rounded-xl text-sm neon-border focus:outline-none">
                     </div>
-                    <select id="filterProvince" class="bg-[#090d0b] text-white px-4 py-2.5 rounded-xl text-sm neon-border focus:outline-none">
+                    <!-- รายชื่อจังหวัดสร้างจากข้อมูลจริงใน fillProvinces() -->
+                    <select id="filterProvince" aria-label="จังหวัด" class="min-w-0 bg-[#090d0b] text-white px-4 py-2.5 rounded-xl text-sm neon-border focus:outline-none">
                         <option value="">ทุกจังหวัด</option>
-                        <option value="กรุงเทพมหานคร">กรุงเทพมหานคร</option>
-                        <option value="นนทบุรี">นนทบุรี</option>
-                        <option value="ปทุมธานี">ปทุมธานี</option>
-                        <option value="สมุทรปราการ">สมุทรปราการ</option>
-                        <option value="เชียงใหม่">เชียงใหม่</option>
-                        <option value="ชลบุรี">ชลบุรี</option>
                     </select>
-                    <select id="filterFee" class="bg-[#090d0b] text-white px-4 py-2.5 rounded-xl text-sm neon-border focus:outline-none">
+                    <select id="filterFee" aria-label="ค่าสมัคร" class="min-w-0 bg-[#090d0b] text-white px-4 py-2.5 rounded-xl text-sm neon-border focus:outline-none">
                         <option value="">ค่าสมัครทั้งหมด</option>
                         <option value="free">ฟรีค่าสมัคร</option>
                         <option value="paid">มีค่าสมัคร</option>
@@ -140,15 +131,15 @@
                 <span id="eventCount" class="text-xs text-gray-400 bg-black/40 px-3 py-1 rounded-full neon-border">กำลังโหลดข้อมูล...</span>
             </div>
 
-            <div id="eventListContainer" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div id="eventListContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 <!-- Data cards will load here -->
             </div>
 
             <!-- WINNER COMBOS -->
-            <img src="winner-congrats.jpg" alt="ขอแสดงความยินดีกับผู้ชนะทุกคนด้วยจ้า" loading="lazy" class="w-full max-w-md mx-auto rounded-2xl neon-border mt-4">
+            <img src="winner-congrats.jpg" width="800" height="800" alt="ขอแสดงความยินดีกับผู้ชนะทุกคนด้วยจ้า" loading="lazy" decoding="async" class="w-full max-w-md mx-auto rounded-2xl neon-border mt-4">
 
             <!-- COMBO USAGE CHART (Sheet tab "Graph") -->
-            <div class="bg-cardBg p-4 md:p-6 rounded-2xl neon-border shadow-xl space-y-4">
+            <div id="stats" class="scroll-mt-20 bg-cardBg p-4 md:p-6 rounded-2xl neon-border shadow-xl space-y-4">
                 <div>
                     <div class="flex flex-wrap items-center gap-x-3 gap-y-2">
                         <h2 class="text-lg font-bold text-white flex items-center gap-2">
@@ -169,7 +160,7 @@
                 </button>
             </div>
 
-            <div class="flex flex-wrap justify-between items-center gap-2 px-1">
+            <div id="champions" class="scroll-mt-20 flex flex-wrap justify-between items-center gap-2 px-1">
                 <div class="flex flex-wrap items-center gap-x-3 gap-y-2">
                     <h2 class="text-lg font-bold text-white flex items-center gap-2">
                         <i class="fa-solid fa-trophy text-yellow-400"></i> คอมโบแชมป์ล่าสุด
@@ -181,24 +172,24 @@
                 <span id="comboCount" class="text-xs text-gray-400 bg-black/40 px-3 py-1 rounded-full neon-border">กำลังโหลดข้อมูล...</span>
             </div>
 
-            <div id="comboListContainer" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+            <div id="comboListContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
             <button id="comboMoreBtn" class="hidden w-full bg-[#1b3b2b] text-neonGreen font-semibold py-2.5 rounded-xl text-sm hover:bg-neonGreen hover:text-black transition">
                 ดูเพิ่มเติม
             </button>
 
         </section>
 
-        <!-- RIGHT COLUMN: ORGANIZER SUBMISSION FORM -->
-        <aside class="space-y-6">
-            <div class="bg-cardBg p-6 rounded-2xl neon-border shadow-2xl sticky top-6">
-                <div class="flex items-center gap-3 mb-4 pb-3 border-b border-borderGreen">
-                    <div class="w-10 h-10 rounded-xl bg-neonGreen/10 flex items-center justify-center text-neonGreen font-bold text-lg">
-                        <i class="fa-solid fa-plus"></i>
-                    </div>
+    </main>
+
+    <!-- ORGANIZER SUBMISSION FORM: เปิดจากปุ่ม "จัดงานแข่ง" ในแถบเมนู -->
+    <dialog id="organizerDialog" class="bg-cardBg text-white rounded-2xl neon-border p-0 w-[calc(100%-2rem)] max-w-xl backdrop:bg-black/70">
+            <div class="p-5">
+                <div class="flex justify-between items-center gap-3 mb-4 pb-3 border-b border-borderGreen">
                     <div>
                         <h2 class="text-base font-bold text-white">ลงทะเบียนจัดงานแข่ง</h2>
                         <p class="text-xs text-gray-400">แสดงบนเว็บหลังผู้ดูแลอนุมัติ</p>
                     </div>
+                    <button type="button" id="organizerCloseBtn" class="text-gray-400 hover:text-white w-11 h-11 shrink-0" aria-label="ปิด"><i class="fa-solid fa-xmark"></i></button>
                 </div>
 
                 <form id="tournamentForm" class="space-y-4">
@@ -265,10 +256,11 @@
                     <div class="grid grid-cols-2 gap-2">
                         <div>
                             <label class="block text-xs font-semibold text-gray-300 mb-1">จังหวัด</label>
-                            <input type="text" id="formProvince" required placeholder="เช่น กรุงเทพมหานคร"
+                            <input type="text" id="formProvince" required list="provinceList" placeholder="เช่น กรุงเทพมหานคร"
                                 class="w-full bg-[#090d0b] text-white px-3.5 py-2.5 rounded-xl text-sm neon-border focus:outline-none">
                         </div>
                         <div>
+                            <datalist id="provinceList"></datalist>
                             <label class="block text-xs font-semibold text-gray-300 mb-1">เขต / อำเภอ</label>
                             <input type="text" id="formDistrict" required placeholder="เช่น ปทุมวัน"
                                 class="w-full bg-[#090d0b] text-white px-3.5 py-2.5 rounded-xl text-sm neon-border focus:outline-none">
@@ -301,29 +293,27 @@
                     </div>
 
                     <!-- Submit Button -->
-                    <button type="submit" id="submitBtn" class="w-full bg-neonGreen text-black font-bold py-3 rounded-xl hover:bg-emeraldHover hover:text-white transition shadow-lg text-sm tracking-wide flex items-center justify-center gap-2">
+                    <button type="submit" id="submitBtn" class="w-full bg-neonGreen text-black font-bold py-3 rounded-xl hover:bg-white transition shadow-lg text-sm tracking-wide flex items-center justify-center gap-2">
                         <i class="fa-solid fa-cloud-arrow-up"></i> บันทึกงานแข่งลง Google Sheets
                     </button>
                 </form>
             </div>
-        </aside>
-
-    </main>
+    </dialog>
 
     <!-- FOOTER -->
-    <footer class="w-full text-center py-6 border-t border-borderGreen text-xs text-gray-500 mt-auto">
+    <footer class="w-full text-center py-6 border-t border-borderGreen text-xs text-gray-400 mt-auto">
         <div class="grid md:grid-cols-2 gap-4 max-w-5xl mx-auto mb-6 px-4">
             <a href="https://beybladex-part-optimizer.ministryofbeybladex.workers.dev/" target="_blank" rel="noopener" class="block rounded-2xl overflow-hidden neon-border neon-glow hover:border-neonGreen hover:scale-[1.02] transition">
-                <img src="banner-parts.jpg" alt="รวมชิ้นส่วนทั้งหมดของ Beyblade X - Part Optimizer" loading="lazy" class="w-full h-auto">
+                <img src="banner-parts-1000.jpg" width="1000" height="563" alt="รวมชิ้นส่วนทั้งหมดของ Beyblade X - Part Optimizer" loading="lazy" class="w-full h-auto">
             </a>
             <a href="https://ministryofbeybladex.blogspot.com/" target="_blank" rel="noopener" class="block rounded-2xl overflow-hidden neon-border neon-glow hover:border-neonGreen hover:scale-[1.02] transition">
-                <img src="banner-blog.jpg" alt="ข้อมูล Beyblade X สำหรับมือใหม่ - Ministry of Beyblade X Blogspot" loading="lazy" class="w-full h-auto">
+                <img src="banner-blog-1000.jpg" width="1000" height="563" alt="ข้อมูล Beyblade X สำหรับมือใหม่ - Ministry of Beyblade X Blogspot" loading="lazy" class="w-full h-auto">
             </a>
         </div>
         <p class="mb-3"><a href="https://altmind.vercel.app/" target="_blank" rel="noopener" class="text-neonGreen hover:underline">แพ้แล้วท้อ? ฝึกใจกับ AltMind</a></p>
         Ministry of Beyblade X Thailand &copy; 2026 - Powered by Google Sheets Database
-        <section lang="en" class="max-w-2xl mx-auto mt-4 px-4 space-y-1 text-[11px] text-gray-500">
-            <p class="font-semibold text-gray-400">Disclaimer</p>
+        <section lang="en" class="max-w-2xl mx-auto mt-4 px-4 space-y-1 text-[11px] text-gray-400">
+            <p class="font-semibold text-gray-300">Disclaimer</p>
             <p>Ministry of Beyblade X is an independent fan-created community project. It is not affiliated with, endorsed by, sponsored by, or officially connected to Takara Tomy or any other official Beyblade rights holders.</p>
             <p>BEYBLADE X, related product names, logos, designs, and other intellectual property belong to their respective owners.</p>
             <p>All trademarks and copyrights are acknowledged and belong to their respective owners.</p>
@@ -528,6 +518,7 @@
                 const result = await response.json();
                 if (!result.ok) throw new Error(result.error);
                 tournaments = result.data;
+                fillProvinces();
                 filterData();
             } catch (error) {
                 console.error('Error fetching data:', error);
@@ -551,7 +542,7 @@
                 return;
             }
 
-            container.innerHTML = data.map(event => {
+            container.innerHTML = data.map((event, i) => {
                 const eventLink = event.link || window.location.href;
                 const location = [event.venue, event.district, event.province].filter(Boolean).join(', ');
                 const shareText = `ขอเชิญร่วมการแข่งขัน Beyblade X: ${event.title} วันที่ ${formatThaiDate(event.date)} ที่ ${location}`;
@@ -563,7 +554,7 @@
                 <div class="bg-cardBg rounded-2xl neon-border overflow-hidden flex flex-col justify-between shadow-xl hover:border-neonGreen transition duration-300">
                     <div>
                         <div class="aspect-[4/3] w-full relative overflow-hidden bg-black">
-                            <img src="${esc(event.image || DEFAULT_IMAGE)}" referrerpolicy="no-referrer" onerror="this.onerror=null; this.src='${DEFAULT_IMAGE}';" alt="${esc(event.title)}" class="w-full h-full object-contain">
+                            <img src="${esc(event.image || DEFAULT_IMAGE)}" ${i > 1 ? 'loading="lazy"' : ''} decoding="async" referrerpolicy="no-referrer" onerror="this.onerror=null; this.src='${DEFAULT_IMAGE}';" alt="${esc(event.title)}" class="w-full h-full object-contain">
                             <div class="absolute top-3 left-3 bg-black/70 backdrop-blur-md px-3 py-1 rounded-full text-xs font-semibold text-neonGreen neon-border">
                                 ${esc(event.fee)}
                             </div>
@@ -654,6 +645,7 @@
 
                 alert('ส่งข้อมูลงานแข่งสำเร็จ! งานจะแสดงบนเว็บหลังผู้ดูแลอนุมัติ');
                 document.getElementById('tournamentForm').reset();
+                organizerDialog.close();
                 imageData = '';
                 imagePreviewContainer.classList.add('hidden');
             } catch (error) {
@@ -664,6 +656,20 @@
                 submitBtn.innerHTML = `<i class="fa-solid fa-cloud-arrow-up"></i> บันทึกงานแข่งลง Google Sheets`;
             }
         });
+
+        // ตัวเลือกจังหวัดจากข้อมูลจริง: ตัวกรอง + datalist ในฟอร์มจัดงาน
+        function fillProvinces() {
+            const names = [...new Set(tournaments.map(t => String(t.province ?? '').trim()).filter(Boolean))]
+                .sort((a, b) => a.localeCompare(b, 'th'));
+            const options = names.map(v => `<option value="${esc(v)}">${esc(v)}</option>`).join('');
+            document.getElementById('filterProvince').innerHTML = '<option value="">ทุกจังหวัด</option>' + options;
+            document.getElementById('provinceList').innerHTML = options;
+        }
+
+        // Organizer form dialog
+        const organizerDialog = document.getElementById('organizerDialog');
+        document.getElementById('organizerBtn').addEventListener('click', () => organizerDialog.showModal());
+        document.getElementById('organizerCloseBtn').addEventListener('click', () => organizerDialog.close());
 
         // Filter Event Listeners
         document.getElementById('searchInput').addEventListener('input', filterData);
@@ -678,7 +684,7 @@
             const filtered = tournaments.filter(item => {
                 const matchSearch = [item.title, item.district, item.venue, item.province]
                     .some(v => String(v ?? '').toLowerCase().includes(search));
-                const matchProvince = province === '' || item.province === province;
+                const matchProvince = province === '' || String(item.province ?? '').trim() === province;
                 const isFree = String(item.fee ?? '').toLowerCase().includes('ฟรี');
                 const matchFee = feeType === '' ||
                     (feeType === 'free' && isFree) ||

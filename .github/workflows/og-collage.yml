@@ -20,11 +20,12 @@ jobs:
       - run: pip install pillow
       - run: python scripts/test_make_og.py
       - run: python scripts/make_og.py
+      - run: npx -y tailwindcss@3.4.17 -c tailwind.config.js -o tailwind.css --minify
       - name: Commit and republish when the collage changed
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          git add og index.html
+          git add og index.html tailwind.css
           git diff --cached --quiet && exit 0
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
