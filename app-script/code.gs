@@ -24,8 +24,14 @@ var MAX_PROFILE_BYTES = 200 * 1024; // หน้า admin ย่อเหลื�
 //    ?data=winners: ส่งคอมโบผู้ชนะที่อนุมัติแล้วเป็น CSV (รูปแบบเดียวกับ export ของ Google Sheet)
 function doGet(e) {
   if (e && e.parameter && e.parameter.data === 'winners') {
-    return ContentService.createTextOutput(winnersCsv(getWinnerSheet().getDataRange().getDisplayValues()))
-      .setMimeType(ContentService.MimeType.CSV);
+    // แคช 5 นาที: ไม่ต้องเปิดชีตทุกครั้ง (ติ๊ก approved แล้วขึ้นเว็บภายใน 5 นาที)
+    var cache = CacheService.getScriptCache();
+    var csv = cache.get('winnersCsv');
+    if (!csv) {
+      csv = winnersCsv(getWinnerSheet().getDataRange().getDisplayValues());
+      if (csv.length < 100000) cache.put('winnersCsv', csv, 300);
+    }
+    return ContentService.createTextOutput(csv).setMimeType(ContentService.MimeType.CSV);
   }
   if (e && e.parameter && e.parameter.data === 'profiles') {
     return json({ ok: true, data: profilesList(getProfileSheet().getDataRange().getValues()) });

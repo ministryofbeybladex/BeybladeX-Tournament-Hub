@@ -304,10 +304,10 @@
     <footer class="w-full text-center py-6 border-t border-borderGreen text-xs text-gray-400 mt-auto">
         <div class="grid md:grid-cols-2 gap-4 max-w-5xl mx-auto mb-6 px-4">
             <a href="https://beybladex-part-optimizer.ministryofbeybladex.workers.dev/" target="_blank" rel="noopener" class="block rounded-2xl overflow-hidden neon-border neon-glow hover:border-neonGreen hover:scale-[1.02] transition">
-                <img src="banner-parts-1000.jpg" width="1000" height="563" alt="รวมชิ้นส่วนทั้งหมดของ Beyblade X - Part Optimizer" loading="lazy" class="w-full h-auto">
+                <img src="banner-parts.jpg" width="1200" height="676" alt="รวมชิ้นส่วนทั้งหมดของ Beyblade X - Part Optimizer" loading="lazy" class="w-full h-auto">
             </a>
             <a href="https://ministryofbeybladex.blogspot.com/" target="_blank" rel="noopener" class="block rounded-2xl overflow-hidden neon-border neon-glow hover:border-neonGreen hover:scale-[1.02] transition">
-                <img src="banner-blog-1000.jpg" width="1000" height="563" alt="ข้อมูล Beyblade X สำหรับมือใหม่ - Ministry of Beyblade X Blogspot" loading="lazy" class="w-full h-auto">
+                <img src="banner-blog.jpg" width="1200" height="676" alt="ข้อมูล Beyblade X สำหรับมือใหม่ - Ministry of Beyblade X Blogspot" loading="lazy" class="w-full h-auto">
             </a>
         </div>
         <p class="mb-3"><a href="https://altmind.vercel.app/" target="_blank" rel="noopener" class="text-neonGreen hover:underline">แพ้แล้วท้อ? ฝึกใจกับ AltMind</a></p>
@@ -496,6 +496,21 @@
             container.appendChild(div);
         });
 
+        // Apps Script ตอบช้าเป็นบางครั้ง (เคยวัดได้ ~2 นาที): แสดงข้อมูลรอบก่อนจาก localStorage ทันที
+        // แล้วโหลดใหม่เบื้องหลัง ถ้าโหลดใหม่ไม่สำเร็จแต่มีของเดิม ก็ใช้ของเดิมต่อ
+        async function cachedLoad(key, load, apply) {
+            let cached = null;
+            try { cached = localStorage.getItem(key); } catch {}
+            if (cached) {
+                try { apply(cached); } catch { cached = null; }
+            }
+            let fresh;
+            try { fresh = await load(); }
+            catch (error) { if (cached) { console.warn('Using cached ' + key, error); return; } throw error; }
+            if (fresh !== cached) apply(fresh);
+            try { localStorage.setItem(key, fresh); } catch {}
+        }
+
         // Fetch Data from Google Sheets
         async function fetchTournaments() {
             const container = document.getElementById('eventListContainer');
@@ -514,12 +529,15 @@
             }
 
             try {
-                const response = await fetch(WEB_APP_URL);
-                const result = await response.json();
-                if (!result.ok) throw new Error(result.error);
-                tournaments = result.data;
-                fillProvinces();
-                filterData();
+                await cachedLoad('bbx-tournaments', async () => {
+                    const result = await (await fetch(WEB_APP_URL)).json();
+                    if (!result.ok) throw new Error(result.error);
+                    return JSON.stringify(result.data);
+                }, text => {
+                    tournaments = JSON.parse(text);
+                    fillProvinces();
+                    filterData();
+                });
             } catch (error) {
                 console.error('Error fetching data:', error);
                 countBadge.textContent = 'โหลดข้อมูลไม่สำเร็จ';
@@ -729,22 +747,29 @@
 
         async function fetchCombos() {
             try {
-                const response = await fetch(COMBO_CSV_URL);
-                if (!response.ok) throw new Error(response.status);
-                const rows = parseCSV(await response.text());
-                usage = countUsage(rows);
-                renderUsage(false);
-                fillComboSuggestions(rows);
-                combos = rows
-                    .filter(r => r.date && r.winner_name)
-                    .map(r => ({ ...r, date: dmyToIso(r.date) }))
-                    .sort((a, b) => a.date < b.date ? 1 : a.date > b.date ? -1 : 0);
-                renderCombos(false);
+                await cachedLoad('bbx-winners', async () => {
+                    const response = await fetch(COMBO_CSV_URL);
+                    const text = await response.text();
+                    if (!response.ok || !text.startsWith('"date"')) throw new Error(response.status);
+                    return text;
+                }, applyCombos);
             } catch (error) {
                 console.error('Error fetching combos:', error);
                 document.getElementById('comboCount').textContent = 'โหลดข้อมูลไม่สำเร็จ';
                 document.getElementById('usageNote').textContent = 'โหลดข้อมูลไม่สำเร็จ';
             }
+        }
+
+        function applyCombos(text) {
+            const rows = parseCSV(text);
+            usage = countUsage(rows);
+            renderUsage(false);
+            fillComboSuggestions(rows);
+            combos = rows
+                .filter(r => r.date && r.winner_name)
+                .map(r => ({ ...r, date: dmyToIso(r.date) }))
+                .sort((a, b) => a.date < b.date ? 1 : a.date > b.date ? -1 : 0);
+            renderCombos(false);
         }
 
         function renderCombos(showAll) {
