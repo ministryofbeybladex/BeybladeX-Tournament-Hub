@@ -35,3 +35,8 @@ assert.strictEqual(ctx.profileRow(profiles, ' bank '), 2, 'case and spaces ignor
 assert.strictEqual(ctx.profileRow(profiles, 'nont ja'), 4);
 assert.strictEqual(ctx.profileRow(profiles, 'Por'), 0);
 console.log('ok');
+const tl = [['id', 'owner', 'image', 'date'], ['100', 'Bank', 'https://x/d/a', '2026-11-01'], ['', '', '', ''], ['300', 'Nont', 'https://x/d/b', '2026-11-12'], ['200', 'NoPic', '', '2026-11-05']];
+assert.deepStrictEqual(ctx.tierListsList(tl).map(r => r.owner), ['Nont', 'Bank'], 'newest first, rows without a picture skipped');
+assert.strictEqual(ctx.tierListRow(tl, 300), 4);
+assert.strictEqual(ctx.tierListRow(tl, '999'), 0);
+console.log('ok tierlists');

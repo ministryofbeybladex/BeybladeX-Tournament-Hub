@@ -19,6 +19,11 @@ var WINNER_TYPES = ['shop winner', 'shop winner (Team)', 'G1 Official', 'G2 Offi
 var PROFILE_TAB = 'Profiles';
 var PROFILE_FOLDER = 'WinnerProfiles';
 var MAX_PROFILE_BYTES = 200 * 1024; // หน้า admin ย่อเหลือ 256x256 (~20KB) ก่อนส่ง
+// Tier List จากแฟนๆ: แท็บ TierLists ใน BBXWinnerCombo (id, owner, image, date) รูปเก็บในโฟลเดอร์ย่อย FanTierLists
+// ผู้ดูแลอัป/ลบจากหน้า profile-admin.html ด้วย ADMIN_KEY เดียวกัน · Part Optimizer แสดงที่หน้า /tierlist
+var TIERLIST_TAB = 'TierLists';
+var TIERLIST_FOLDER = 'FanTierLists';
+var MAX_TIERLIST_BYTES = 800 * 1024; // หน้า admin ย่อเหลือกว้าง 1000px JPEG (~100-200KB) ก่อนส่ง
 
 // 1. GET: ส่งเฉพาะงานที่อนุมัติแล้ว และยังไม่ถึงวันแข่ง เรียงจากวันที่ใกล้สุด
 //    ?data=winners: ส่งคอมโบผู้ชนะที่อนุมัติแล้วเป็น CSV (รูปแบบเดียวกับ export ของ Google Sheet)
@@ -35,6 +40,9 @@ function doGet(e) {
   }
   if (e && e.parameter && e.parameter.data === 'profiles') {
     return json({ ok: true, data: profilesList(getProfileSheet().getDataRange().getValues()) });
+  }
+  if (e && e.parameter && e.parameter.data === 'tierlists') {
+    return json({ ok: true, data: tierListsList(getTierListSheet().getDataRange().getValues()) });
   }
   try {
     var rows = getSheet().getDataRange().getValues();
@@ -89,6 +97,13 @@ function doPost(e) {
     }
     if (p.kind === 'profile') {
       saveProfile(p);
+      return json({ ok: true });
+    }
+    if (p.kind === 'tierlist') {
+      return json({ ok: true, data: saveTierList(p) });
+    }
+    if (p.kind === 'tierlist-delete') {
+      deleteTierList(p);
       return json({ ok: true });
     }
     if (!p.title || !p.date || !p.fee || !p.province || !p.district || !p.venue) {
@@ -241,9 +256,13 @@ function getProfileSheet() {
 }
 
 // บันทึก/แทนรูปโปรไฟล์ (รูปเก่าย้ายไปถังขยะ Drive)
-function saveProfile(p) {
+function checkAdmin(key) {
   var adminKey = PropertiesService.getScriptProperties().getProperty('ADMIN_KEY');
-  if (!adminKey || p.key !== adminKey) throw new Error('รหัสผู้ดูแลไม่ถูกต้อง');
+  if (!adminKey || key !== adminKey) throw new Error('รหัสผู้ดูแลไม่ถูกต้อง');
+}
+
+function saveProfile(p) {
+  checkAdmin(p.key);
   var name = String(p.name || '').trim().slice(0, 60);
   if (!name) throw new Error('ไม่มีชื่อผู้ชนะ');
   var m = /^data:image\/jpeg;base64,(.+)$/.exec(p.imageData || '');
@@ -268,6 +287,67 @@ function saveProfile(p) {
   } else {
     sheet.appendRow(["'" + name, image]);
   }
+}
+
+// แถวในแท็บ TierLists -> [{ id, owner, image, date }] ใหม่สุดก่อน (ข้ามหัวตารางและแถวไม่มีรูป)
+function tierListsList(values) {
+  return values.slice(1).filter(function (r) { return r[0] && r[2]; })
+    .map(function (r) {
+      var d = r[3] instanceof Date ? Utilities.formatDate(r[3], TZ, 'yyyy-MM-dd') : String(r[3]);
+      return { id: String(r[0]), owner: String(r[1]), image: String(r[2]), date: d };
+    })
+    .sort(function (a, b) { return Number(b.id) - Number(a.id); });
+}
+
+function getTierListSheet() {
+  var ss = SpreadsheetApp.openById(WINNER_SHEET_ID);
+  var sheet = ss.getSheetByName(TIERLIST_TAB);
+  if (!sheet) {
+    sheet = ss.insertSheet(TIERLIST_TAB);
+    sheet.appendRow(['id', 'owner', 'image', 'date']);
+  }
+  return sheet;
+}
+
+// เพิ่มรูป Tier List ของแฟน (owner = ชื่อเจ้าของ) คืนแถวที่เพิ่มให้หน้า admin แสดงทันที
+function saveTierList(p) {
+  checkAdmin(p.key);
+  var owner = String(p.owner || '').trim().slice(0, 40);
+  if (!owner) throw new Error('ไม่มีชื่อเจ้าของ Tier List');
+  var m = /^data:image\/jpeg;base64,(.+)$/.exec(p.imageData || '');
+  if (!m) throw new Error('ไฟล์รูปไม่ถูกต้อง');
+  var bytes = Utilities.base64Decode(m[1]);
+  if (bytes.length > MAX_TIERLIST_BYTES) throw new Error('รูปใหญ่เกิน 800KB');
+
+  var parent = DriveApp.getFolderById(FOLDER_ID);
+  var folders = parent.getFoldersByName(TIERLIST_FOLDER);
+  var folder = folders.hasNext() ? folders.next() : parent.createFolder(TIERLIST_FOLDER);
+  var id = String(new Date().getTime());
+  var file = folder.createFile(Utilities.newBlob(bytes, 'image/jpeg', id + '-' + owner + '.jpg'));
+  file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+  var row = { id: id, owner: owner, image: 'https://lh3.googleusercontent.com/d/' + file.getId(), date: Utilities.formatDate(new Date(), TZ, 'yyyy-MM-dd') };
+  getTierListSheet().appendRow([id, "'" + owner, row.image, "'" + row.date]);
+  return row;
+}
+
+// เลขแถว (เริ่ม 1 แบบ Sheet) ของ id นี้ในแท็บ TierLists, 0 ถ้าไม่มี
+function tierListRow(values, id) {
+  for (var i = 1; i < values.length; i++) {
+    if (String(values[i][0]) === String(id)) return i + 1;
+  }
+  return 0;
+}
+
+// ลบ Tier List: ลบแถว และย้ายรูปไปถังขยะ Drive
+function deleteTierList(p) {
+  checkAdmin(p.key);
+  var sheet = getTierListSheet();
+  var values = sheet.getDataRange().getValues();
+  var row = tierListRow(values, p.id);
+  if (!row) throw new Error('ไม่พบ Tier List นี้');
+  var fileId = String(values[row - 1][2]).split('/d/')[1];
+  try { if (fileId) DriveApp.getFileById(fileId).setTrashed(true); } catch (err) { /* ไฟล์ถูกลบไปแล้ว */ }
+  sheet.deleteRow(row);
 }
 
 // รับ data URL (base64) บันทึกเป็นไฟล์ใน Drive และคืนลิงก์ที่ใช้ใน <img> ได้

@@ -19,6 +19,22 @@
     <p class="text-xs text-gray-400">กดที่ชื่อเพื่อเลือกรูป · ระบบครอปตรงกลางเป็นสี่เหลี่ยมและย่อให้อัตโนมัติ · อัปซ้ำได้ รูปเก่าจะถูกแทน</p>
     <p id="status" class="text-sm text-gray-400">กำลังโหลดข้อมูล...</p>
     <ul id="list" class="grid grid-cols-3 sm:grid-cols-5 gap-4"></ul>
+
+    <!-- Tier List จากแฟนๆ: รูปที่แฟนทำจาก Part Optimizer /mytierlist แล้วส่งมาทางแชท -> แสดงที่ /tierlist -->
+    <section class="pt-6 mt-6 border-t border-[#1b3b2b] space-y-3">
+        <h2 class="text-xl font-bold text-[#00ff88]">Tier List จากแฟนๆ</h2>
+        <p class="text-xs text-gray-400">ใส่ชื่อเจ้าของ แล้วเลือกรูป · ระบบย่อเหลือกว้าง 1000px อัตโนมัติ · ขึ้นหน้า Tier List ของ Part Optimizer ทันที</p>
+        <div class="flex flex-col sm:flex-row gap-2">
+            <input id="tlOwner" maxlength="40" placeholder="ชื่อเจ้าของ Tier List" class="flex-1 bg-black text-white px-3 py-2 rounded-xl border border-[#1b3b2b]">
+            <label class="bg-[#1b3b2b] px-4 py-2 rounded-xl text-sm text-center cursor-pointer">เลือกรูป
+                <input id="tlFile" type="file" accept="image/*" class="sr-only">
+            </label>
+            <button id="tlSave" class="bg-[#00ff88] text-black font-bold px-4 py-2 rounded-xl text-sm disabled:opacity-50" disabled>อัปโหลด</button>
+        </div>
+        <img id="tlPreview" alt="ตัวอย่าง Tier List" class="hidden max-h-64 rounded-xl border border-[#1b3b2b]">
+        <p id="tlStatus" class="text-sm text-gray-400">กำลังโหลด...</p>
+        <ul id="tlList" class="grid grid-cols-2 sm:grid-cols-3 gap-4"></ul>
+    </section>
 </main>
 
 <dialog id="dlg" class="bg-[#111814] text-white rounded-2xl p-5 w-[calc(100%-2rem)] max-w-xs backdrop:bg-black/70">
@@ -157,6 +173,108 @@
     });
 
     load().catch(err => { console.error(err); $('status').textContent = 'โหลดข้อมูลไม่สำเร็จ'; });
+
+    // ---- Tier List จากแฟนๆ ----
+    let tierLists = [], tlImage = '';
+
+    // ย่อให้กว้างไม่เกิน maxW -> JPEG (Tier List PNG กว้าง 1400px ~ เหลือ 100-200KB)
+    function shrinkImage(file, maxW = 1000) {
+        return new Promise((resolve, reject) => {
+            const img = new Image();
+            img.onload = () => {
+                const scale = Math.min(1, maxW / img.width);
+                const canvas = document.createElement('canvas');
+                canvas.width = Math.round(img.width * scale);
+                canvas.height = Math.round(img.height * scale);
+                const g = canvas.getContext('2d');
+                g.fillStyle = '#000'; // JPEG ไม่มีความโปร่งใส: ทาพื้นดำก่อน มุมโค้งของการ์ดจะได้ไม่กลายเป็นสีอื่น
+                g.fillRect(0, 0, canvas.width, canvas.height);
+                g.drawImage(img, 0, 0, canvas.width, canvas.height);
+                URL.revokeObjectURL(img.src);
+                resolve(canvas.toDataURL('image/jpeg', 0.85));
+            };
+            img.onerror = reject;
+            img.src = URL.createObjectURL(file);
+        });
+    }
+
+    function renderTierLists() {
+        $('tlStatus').textContent = tierLists.length ? `${tierLists.length} รูป` : 'ยังไม่มี Tier List';
+        $('tlList').innerHTML = tierLists.map((t, i) => `
+            <li class="space-y-1">
+                <img src="${esc(t.image)}" referrerpolicy="no-referrer" alt="Tier List ของ ${esc(t.owner)}" class="w-full rounded-xl border border-[#1b3b2b]">
+                <div class="flex items-center gap-2 text-sm">
+                    <span class="flex-1 line-clamp-1">${esc(t.owner)} <span class="text-gray-400 text-xs">${esc(t.date)}</span></span>
+                    <button data-del="${i}" class="bg-red-700 px-3 py-2 rounded-xl text-xs">ลบ</button>
+                </div>
+            </li>`).join('');
+    }
+
+    async function postAdmin(body) {
+        const key = $('key').value.trim();
+        if (!key) throw new Error('กรอกรหัสผู้ดูแลก่อน');
+        const res = await fetch(WEB_APP_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify({ ...body, key })
+        });
+        const result = await res.json();
+        if (!result.ok) throw new Error(result.error);
+        try { localStorage.setItem('profileAdminKey', key); } catch (e) {}
+        return result.data;
+    }
+
+    const tlReady = () => { $('tlSave').disabled = !tlImage || !$('tlOwner').value.trim(); };
+    $('tlOwner').addEventListener('input', tlReady);
+
+    $('tlFile').addEventListener('change', async () => {
+        const file = $('tlFile').files[0];
+        if (!file) return;
+        tlImage = await shrinkImage(file);
+        $('tlPreview').src = tlImage;
+        $('tlPreview').classList.remove('hidden');
+        tlReady();
+    });
+
+    $('tlSave').addEventListener('click', async () => {
+        const btn = $('tlSave');
+        btn.disabled = true;
+        btn.textContent = 'กำลังอัปโหลด...';
+        try {
+            const row = await postAdmin({ kind: 'tierlist', owner: $('tlOwner').value.trim(), imageData: tlImage });
+            tierLists.unshift(row);
+            tlImage = '';
+            $('tlOwner').value = '';
+            $('tlFile').value = '';
+            $('tlPreview').classList.add('hidden');
+            renderTierLists();
+        } catch (error) {
+            alert('อัปโหลดไม่สำเร็จ: ' + error.message);
+        } finally {
+            btn.textContent = 'อัปโหลด';
+            tlReady();
+        }
+    });
+
+    $('tlList').addEventListener('click', async e => {
+        const btn = e.target.closest('button[data-del]');
+        if (!btn) return;
+        const t = tierLists[btn.dataset.del];
+        if (!confirm(`ลบ Tier List ของ ${t.owner}?`)) return;
+        btn.disabled = true;
+        try {
+            await postAdmin({ kind: 'tierlist-delete', id: t.id });
+            tierLists = tierLists.filter(x => x !== t);
+            renderTierLists();
+        } catch (error) {
+            alert('ลบไม่สำเร็จ: ' + error.message);
+            btn.disabled = false;
+        }
+    });
+
+    fetch(WEB_APP_URL + '?data=tierlists').then(r => r.json())
+        .then(r => { tierLists = r.data || []; renderTierLists(); })
+        .catch(err => { console.error(err); $('tlStatus').textContent = 'โหลด Tier List ไม่สำเร็จ (deploy Apps Script เวอร์ชันใหม่แล้วหรือยัง?)'; });
 </script>
 </body>
 </html>
