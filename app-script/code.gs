@@ -106,6 +106,14 @@ function doPost(e) {
       deleteTierList(p);
       return json({ ok: true });
     }
+    if (p.kind === 'tierlist-rename') {
+      renameTierList(p);
+      return json({ ok: true });
+    }
+    if (p.kind === 'tierlist-order') {
+      reorderTierLists(p);
+      return json({ ok: true });
+    }
     if (!p.title || !p.date || !p.fee || !p.province || !p.district || !p.venue) {
       throw new Error('กรอกข้อมูลไม่ครบ');
     }
@@ -289,14 +297,20 @@ function saveProfile(p) {
   }
 }
 
-// แถวในแท็บ TierLists -> [{ id, owner, image, date }] ใหม่สุดก่อน (ข้ามหัวตารางและแถวไม่มีรูป)
+// แถวในแท็บ TierLists -> [{ id, owner, image, date }] (ข้ามหัวตารางและแถวไม่มีรูป)
+// เรียงตามคอลัมน์ order ที่ผู้ดูแลลากจัดไว้ · แถวที่ยังไม่มี order (อัปใหม่หลังจัดครั้งล่าสุด) ขึ้นก่อน ใหม่สุดก่อน
 function tierListsList(values) {
   return values.slice(1).filter(function (r) { return r[0] && r[2]; })
     .map(function (r) {
       var d = r[3] instanceof Date ? Utilities.formatDate(r[3], TZ, 'yyyy-MM-dd') : String(r[3]);
-      return { id: String(r[0]), owner: String(r[1]), image: String(r[2]), date: d };
+      var order = r[4] === '' || r[4] === undefined ? null : Number(r[4]);
+      return { id: String(r[0]), owner: String(r[1]), image: String(r[2]), date: d, order: order };
     })
-    .sort(function (a, b) { return Number(b.id) - Number(a.id); });
+    .sort(function (a, b) {
+      if ((a.order === null) !== (b.order === null)) return a.order === null ? -1 : 1;
+      return a.order === null ? Number(b.id) - Number(a.id) : a.order - b.order;
+    })
+    .map(function (t) { return { id: t.id, owner: t.owner, image: t.image, date: t.date }; });
 }
 
 function getTierListSheet() {
@@ -304,7 +318,9 @@ function getTierListSheet() {
   var sheet = ss.getSheetByName(TIERLIST_TAB);
   if (!sheet) {
     sheet = ss.insertSheet(TIERLIST_TAB);
-    sheet.appendRow(['id', 'owner', 'image', 'date']);
+    sheet.appendRow(['id', 'owner', 'image', 'date', 'order']);
+  } else if (sheet.getRange(1, 5).getValue() !== 'order') {
+    sheet.getRange(1, 5).setValue('order'); // แท็บที่สร้างก่อนมีคอลัมน์ order
   }
   return sheet;
 }
@@ -336,6 +352,34 @@ function tierListRow(values, id) {
     if (String(values[i][0]) === String(id)) return i + 1;
   }
   return 0;
+}
+
+// แก้ชื่อเจ้าของ Tier List
+function renameTierList(p) {
+  checkAdmin(p.key);
+  var owner = String(p.owner || '').trim().slice(0, 40);
+  if (!owner) throw new Error('ไม่มีชื่อเจ้าของ Tier List');
+  var sheet = getTierListSheet();
+  var row = tierListRow(sheet.getDataRange().getValues(), p.id);
+  if (!row) throw new Error('ไม่พบ Tier List นี้');
+  sheet.getRange(row, 2).setValue("'" + owner);
+}
+
+// ids ตามลำดับที่ผู้ดูแลลากจัด -> ค่า order ของแต่ละแถว (1, 2, 3, ...) id ที่ไม่อยู่ในรายการคงค่าเดิม
+function orderColumn(values, ids) {
+  return values.slice(1).map(function (r) {
+    var i = ids.indexOf(String(r[0]));
+    return [i === -1 ? (r[4] === undefined ? '' : r[4]) : i + 1];
+  });
+}
+
+function reorderTierLists(p) {
+  checkAdmin(p.key);
+  if (!Array.isArray(p.ids)) throw new Error('ไม่มีลำดับ');
+  var sheet = getTierListSheet();
+  var values = sheet.getDataRange().getValues();
+  if (values.length < 2) return;
+  sheet.getRange(2, 5, values.length - 1, 1).setValues(orderColumn(values, p.ids.map(String)));
 }
 
 // ลบ Tier List: ลบแถว และย้ายรูปไปถังขยะ Drive

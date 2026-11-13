@@ -39,4 +39,7 @@ const tl = [['id', 'owner', 'image', 'date'], ['100', 'Bank', 'https://x/d/a', '
 assert.deepStrictEqual(ctx.tierListsList(tl).map(r => r.owner), ['Nont', 'Bank'], 'newest first, rows without a picture skipped');
 assert.strictEqual(ctx.tierListRow(tl, 300), 4);
 assert.strictEqual(ctx.tierListRow(tl, '999'), 0);
+const ordered = [['id', 'owner', 'image', 'date', 'order'], ['100', 'A', 'x', 'd', 2], ['200', 'B', 'x', 'd', 1], ['300', 'New', 'x', 'd', ''], ['400', 'Newer', 'x', 'd', '']];
+assert.deepStrictEqual(ctx.tierListsList(ordered).map(r => r.owner), ['Newer', 'New', 'B', 'A'], 'unordered uploads first (newest first), then admin order');
+assert.strictEqual(JSON.stringify(ctx.orderColumn(ordered, ['300', '100'])), JSON.stringify([[2], [1], [1], ['']]), 'listed ids get 1..n, others keep their value');
 console.log('ok tierlists');
