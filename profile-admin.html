@@ -56,11 +56,12 @@
         <label class="block text-sm">ฉายาอื่นของคนเดียวกัน (คั่นด้วย ,)
             <input id="editAliases" class="mt-1 w-full bg-black text-white px-3 py-2 rounded-xl border border-[#1b3b2b]">
         </label>
-        <p class="text-xs text-gray-400">ถ้าเปลี่ยนชื่อ ชื่อเดิมจะถูกเก็บเป็นฉายาให้อัตโนมัติ แชมป์เดิมยังนับรวม</p>
+        <p class="text-xs text-gray-400">ถ้าเปลี่ยนชื่อ ชื่อเดิมจะถูกเก็บเป็นฉายาให้อัตโนมัติ แชมป์เดิมยังนับรวม · ถ้าฉายาตรงกับคนที่แยกไว้อีกวง ระบบจะรวมเป็นคนเดียวให้</p>
         <div class="flex gap-2">
             <button type="button" id="editCancel" class="flex-1 bg-gray-700 py-2 rounded-xl text-sm">ยกเลิก</button>
             <button id="editSave" class="flex-1 bg-[#00ff88] text-black font-bold py-2 rounded-xl text-sm">บันทึก</button>
         </div>
+        <button type="button" id="editDelete" class="w-full bg-red-700 py-2 rounded-xl text-sm">ลบโปรไฟล์นี้ (รูป + ชื่อที่ตั้งไว้)</button>
     </form>
 </dialog>
 <input id="file" type="file" accept="image/*" hidden>
@@ -126,7 +127,7 @@
             const hit = index[nameKey(r.winner_name)];
             const name = hit ? hit.name : r.winner_name;
             const k = nameKey(name);
-            const p = byKey.get(k) || { name, count: 0, image: hit ? hit.image : '', aliases: hit ? hit.aliases || [] : [] };
+            const p = byKey.get(k) || { name, count: 0, image: hit ? hit.image : '', aliases: hit ? hit.aliases || [] : [], hasProfile: !!hit };
             p.count++;
             byKey.set(k, p);
         }
@@ -156,6 +157,7 @@
             current = people[edit.dataset.edit];
             $('editName').value = current.name;
             $('editAliases').value = current.aliases.join(', ');
+            $('editDelete').classList.toggle('hidden', !current.hasProfile);
             $('editDlg').showModal();
             return;
         }
@@ -177,6 +179,24 @@
 
     $('cancel').addEventListener('click', () => $('dlg').close());
     $('editCancel').addEventListener('click', () => $('editDlg').close());
+
+    // ลบแถวในแท็บ Profiles (รูปไปถังขยะ Drive) แชมป์ยังอยู่ แค่กลับไปนับตามชื่อในข้อมูลคอมโบ
+    $('editDelete').addEventListener('click', async () => {
+        if (!confirm(`ลบโปรไฟล์ "${current.name}"?
+รูปและฉายาที่ตั้งไว้จะหายไป แต่แชมป์ยังอยู่ (นับตามชื่อในข้อมูลคอมโบ)`)) return;
+        const btn = $('editDelete');
+        btn.disabled = true;
+        try {
+            await postAdmin({ kind: 'profile-delete', name: current.name });
+            $('editDlg').close();
+            $('status').textContent = 'ลบแล้ว กำลังโหลดใหม่...';
+            await load();
+        } catch (error) {
+            alert('ลบไม่สำเร็จ: ' + error.message);
+        } finally {
+            btn.disabled = false;
+        }
+    });
 
     $('editForm').addEventListener('submit', async e => {
         e.preventDefault();

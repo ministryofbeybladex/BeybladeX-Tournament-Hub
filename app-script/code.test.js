@@ -40,6 +40,10 @@ assert.strictEqual(JSON.stringify(ctx.profilesList(withAliases)),
 assert.strictEqual(ctx.profileRow(withAliases, 'b2x'), 2, 'alias finds the main row');
 assert.strictEqual(ctx.mergedAliases('Pizza KUY', 'Phrabidong KUY', ['phrabidong  kuy', 'Banky', 'banky ', '']), 'Pizza KUY, Banky', 'old name becomes alias, no dupes');
 assert.strictEqual(ctx.mergedAliases('Bank', 'Bank', ['B2X']), 'B2X', 'same name is not its own alias');
+const dup = [['winner_name', 'image', 'aliases'], ['Tamai', 'https://x/d/t', ''], ['Gecko KUY', 'https://x/d/g', 'Tamai'], ['Other', '', ''], ['tamai ', '', '']];
+assert.strictEqual(JSON.stringify(ctx.duplicateRows(dup, 3, ['Gecko KUY', 'Tamai'])), '[5,2]', 'other rows named like an alias, bottom first');
+assert.strictEqual(JSON.stringify(ctx.duplicateRows(dup, 0, ['Other'])), '[4]', 'delete finds the main-name row only');
+assert.strictEqual(JSON.stringify(ctx.duplicateRows(dup, 0, ['nope'])), '[]');
 console.log('ok');
 const tl = [['id', 'owner', 'image', 'date'], ['100', 'Bank', 'https://x/d/a', '2026-11-01'], ['', '', '', ''], ['300', 'Nont', 'https://x/d/b', '2026-11-12'], ['200', 'NoPic', '', '2026-11-05']];
 assert.deepStrictEqual(ctx.tierListsList(tl).map(r => r.owner), ['Nont', 'Bank'], 'newest first, rows without a picture skipped');

@@ -104,6 +104,10 @@ function doPost(e) {
       editProfile(p);
       return json({ ok: true });
     }
+    if (p.kind === 'profile-delete') {
+      deleteProfile(p);
+      return json({ ok: true });
+    }
     if (p.kind === 'tierlist') {
       return json({ ok: true, data: saveTierList(p) });
     }
@@ -324,22 +328,55 @@ function mergedAliases(oldName, newName, aliases) {
   return out.join(', ');
 }
 
+// ชื่อหรือฉายาที่เป็นชื่อหลักของแถวอื่น = คนเดียวกันที่เคยแยกแถวไว้ -> เลขแถวเหล่านั้น (มากไปน้อย ลบจากล่างขึ้นบนได้เลย)
+function duplicateRows(values, row, names) {
+  var keys = names.map(nameKey);
+  var out = [];
+  for (var i = 1; i < values.length; i++) {
+    if (i + 1 !== row && values[i][0] && keys.indexOf(nameKey(values[i][0])) !== -1) out.push(i + 1);
+  }
+  return out.reverse();
+}
+
+function trashImage(url) {
+  var id = String(url || '').split('/d/')[1];
+  try { if (id) DriveApp.getFileById(id).setTrashed(true); } catch (err) { /* ไฟล์ถูกลบไปแล้ว */ }
+}
+
 // แก้ชื่อที่แสดงและฉายาจากหน้า admin (คนที่ยังไม่มีแถวใน Profiles จะได้แถวใหม่)
+// ถ้าฉายาไปตรงกับชื่อหลักของแถวอื่น: รวมแถวนั้นเข้ามา (ฉายาของมันด้วย) ใช้รูปเดิมของแถวนี้ ถ้าไม่มีค่อยใช้รูปของแถวที่รวม แล้วลบแถวนั้น
 function editProfile(p) {
   checkAdmin(p.key);
   var name = String(p.name || '').trim();
   var newName = String(p.newName || '').trim().slice(0, 60);
   if (!name || !newName) throw new Error('ไม่มีชื่อ');
-  var aliases = mergedAliases(name, newName, aliasList(p.aliases));
   var sheet = getProfileSheet();
-  var row = profileRow(sheet.getDataRange().getValues(), name);
-  var cells = ["'" + newName, aliases ? "'" + aliases : ''];
-  if (row) {
-    sheet.getRange(row, 1).setValue(cells[0]);
-    sheet.getRange(row, 3).setValue(cells[1]);
-  } else {
-    sheet.appendRow([cells[0], '', cells[1]]);
-  }
+  var values = sheet.getDataRange().getValues();
+  var row = profileRow(values, name);
+  var wanted = aliasList(p.aliases);
+  var dupes = duplicateRows(values, row, [name, newName].concat(wanted));
+  dupes.forEach(function (r) { wanted = wanted.concat([values[r - 1][0]], aliasList(values[r - 1][2])); });
+  var aliases = mergedAliases(name, newName, wanted);
+  var image = row ? String(values[row - 1][1] || '') : '';
+  dupes.forEach(function (r) {
+    var img = String(values[r - 1][1] || '');
+    if (!image && img) image = img; else trashImage(img);
+  });
+  var cells = ["'" + newName, image, aliases ? "'" + aliases : ''];
+  if (row) sheet.getRange(row, 1, 1, 3).setValues([cells]);
+  else sheet.appendRow(cells);
+  dupes.forEach(function (r) { sheet.deleteRow(r); });
+}
+
+// ลบโปรไฟล์ที่ทำผิด: ลบแถว (ชื่อหลักตรงเท่านั้น) และย้ายรูปไปถังขยะ · แชมป์ไม่หาย จะนับตามชื่อในข้อมูลคอมโบตามเดิม
+function deleteProfile(p) {
+  checkAdmin(p.key);
+  var sheet = getProfileSheet();
+  var values = sheet.getDataRange().getValues();
+  var row = duplicateRows(values, 0, [String(p.name || '')])[0];
+  if (!row) throw new Error('ไม่พบโปรไฟล์นี้');
+  trashImage(values[row - 1][1]);
+  sheet.deleteRow(row);
 }
 
 // แถวในแท็บ TierLists -> [{ id, owner, image, date }] (ข้ามหัวตารางและแถวไม่มีรูป)
