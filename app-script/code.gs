@@ -14,7 +14,8 @@ var WINNER_SHEET_ID = '1ZI1xmJw19klKV5arPidy46xINhBCqMBYnTtLkp8ScWU';
 var WINNER_FIELDS = ['date', 'event_name', 'type', 'rank', 'winner_name',
   'blade1', 'ratchet1', 'bit1', 'blade2', 'ratchet2', 'bit2', 'blade3', 'ratchet3', 'bit3', 'source_link'];
 var WINNER_TYPES = ['shop winner', 'shop winner (Team)', 'G1 Official', 'G2 Official', 'G3 Official'];
-// รูปโปรไฟล์ผู้ชนะ: แท็บ Profiles ใน BBXWinnerCombo (winner_name, image) รูปเก็บในโฟลเดอร์ย่อย WinnerProfiles
+// รูปโปรไฟล์ผู้ชนะ: แท็บ Profiles ใน BBXWinnerCombo (winner_name, image, aliases) รูปเก็บในโฟลเดอร์ย่อย WinnerProfiles
+// aliases = ฉายาอื่นของคนเดียวกัน คั่นด้วย , (ผู้ดูแลพิมพ์ในชีตเอง) เว็บนับแชมป์ทุกฉายารวมเป็นชื่อใน winner_name
 // ผู้ดูแลอัปรูปจากหน้า profile-admin.html ด้วยรหัส ADMIN_KEY (ตั้งใน Project Settings > Script Properties)
 var PROFILE_TAB = 'Profiles';
 var PROFILE_FOLDER = 'WinnerProfiles';
@@ -97,6 +98,10 @@ function doPost(e) {
     }
     if (p.kind === 'profile') {
       saveProfile(p);
+      return json({ ok: true });
+    }
+    if (p.kind === 'profile-edit') {
+      editProfile(p);
       return json({ ok: true });
     }
     if (p.kind === 'tierlist') {
@@ -239,16 +244,24 @@ function nameKey(s) {
   return String(s).trim().toLowerCase().replace(/\s+/g, ' ');
 }
 
-// แถวในแท็บ Profiles -> [{ name, image }] (ข้ามหัวตารางและแถวว่าง)
-function profilesList(values) {
-  return values.slice(1).filter(function (r) { return r[0] && r[1]; })
-    .map(function (r) { return { name: String(r[0]), image: String(r[1]) }; });
+// ช่อง aliases 'A, B' -> ['A', 'B']
+function aliasList(v) {
+  return String(v || '').split(',').map(function (a) { return a.trim(); }).filter(String);
 }
 
-// เลขแถว (เริ่ม 1 แบบ Sheet) ของชื่อนี้ในแท็บ Profiles, 0 ถ้ายังไม่มี
+// แถวในแท็บ Profiles -> [{ name, image, aliases }] (ข้ามหัวตารางและแถวที่ไม่มีทั้งรูปและฉายา)
+function profilesList(values) {
+  return values.slice(1).filter(function (r) { return r[0] && (r[1] || aliasList(r[2]).length); })
+    .map(function (r) { return { name: String(r[0]), image: String(r[1] || ''), aliases: aliasList(r[2]) }; });
+}
+
+// เลขแถว (เริ่ม 1 แบบ Sheet) ของชื่อนี้หรือฉายานี้ในแท็บ Profiles, 0 ถ้ายังไม่มี
 function profileRow(values, name) {
   for (var i = 1; i < values.length; i++) {
-    if (nameKey(values[i][0]) === nameKey(name)) return i + 1;
+    var names = [values[i][0]].concat(aliasList(values[i][2]));
+    for (var j = 0; j < names.length; j++) {
+      if (nameKey(names[j]) === nameKey(name)) return i + 1;
+    }
   }
   return 0;
 }
@@ -258,7 +271,9 @@ function getProfileSheet() {
   var sheet = ss.getSheetByName(PROFILE_TAB);
   if (!sheet) {
     sheet = ss.insertSheet(PROFILE_TAB);
-    sheet.appendRow(['winner_name', 'image']);
+    sheet.appendRow(['winner_name', 'image', 'aliases']);
+  } else if (sheet.getRange(1, 3).getValue() === '') {
+    sheet.getRange(1, 3).setValue('aliases');
   }
   return sheet;
 }
@@ -291,9 +306,39 @@ function saveProfile(p) {
   if (row) {
     var oldId = String(values[row - 1][1]).split('/d/')[1];
     try { if (oldId) DriveApp.getFileById(oldId).setTrashed(true); } catch (err) { /* ไฟล์เก่าถูกลบไปแล้ว */ }
-    sheet.getRange(row, 1, 1, 2).setValues([["'" + name, image]]);
+    sheet.getRange(row, 2).setValue(image); // คงชื่อหลักและฉายาเดิมไว้
   } else {
     sheet.appendRow(["'" + name, image]);
+  }
+}
+
+// ฉายาที่จะเก็บหลังแก้ชื่อ: ชื่อเดิมกลายเป็นฉายา (แชมป์ที่ได้ด้วยชื่อเดิมยังนับรวม) ตัดตัวซ้ำและตัวที่ตรงกับชื่อใหม่
+function mergedAliases(oldName, newName, aliases) {
+  var out = [];
+  [oldName].concat(aliases).forEach(function (a) {
+    a = String(a || '').trim().slice(0, 60);
+    if (!a || nameKey(a) === nameKey(newName)) return;
+    if (out.some(function (o) { return nameKey(o) === nameKey(a); })) return;
+    out.push(a);
+  });
+  return out.join(', ');
+}
+
+// แก้ชื่อที่แสดงและฉายาจากหน้า admin (คนที่ยังไม่มีแถวใน Profiles จะได้แถวใหม่)
+function editProfile(p) {
+  checkAdmin(p.key);
+  var name = String(p.name || '').trim();
+  var newName = String(p.newName || '').trim().slice(0, 60);
+  if (!name || !newName) throw new Error('ไม่มีชื่อ');
+  var aliases = mergedAliases(name, newName, aliasList(p.aliases));
+  var sheet = getProfileSheet();
+  var row = profileRow(sheet.getDataRange().getValues(), name);
+  var cells = ["'" + newName, aliases ? "'" + aliases : ''];
+  if (row) {
+    sheet.getRange(row, 1).setValue(cells[0]);
+    sheet.getRange(row, 3).setValue(cells[1]);
+  } else {
+    sheet.appendRow([cells[0], '', cells[1]]);
   }
 }
 

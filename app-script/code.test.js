@@ -34,6 +34,12 @@ assert.strictEqual(ctx.profilesList(profiles).length, 2, 'blank rows skipped');
 assert.strictEqual(ctx.profileRow(profiles, ' bank '), 2, 'case and spaces ignored');
 assert.strictEqual(ctx.profileRow(profiles, 'nont ja'), 4);
 assert.strictEqual(ctx.profileRow(profiles, 'Por'), 0);
+const withAliases = [['winner_name', 'image', 'aliases'], ['Bank', '', ' Banky ,  B2X '], ['Nobody', '', ''], ['Por', 'https://x/d/3', '']];
+assert.strictEqual(JSON.stringify(ctx.profilesList(withAliases)),
+  JSON.stringify([{ name: 'Bank', image: '', aliases: ['Banky', 'B2X'] }, { name: 'Por', image: 'https://x/d/3', aliases: [] }]), 'aliases kept, photo optional');
+assert.strictEqual(ctx.profileRow(withAliases, 'b2x'), 2, 'alias finds the main row');
+assert.strictEqual(ctx.mergedAliases('Pizza KUY', 'Phrabidong KUY', ['phrabidong  kuy', 'Banky', 'banky ', '']), 'Pizza KUY, Banky', 'old name becomes alias, no dupes');
+assert.strictEqual(ctx.mergedAliases('Bank', 'Bank', ['B2X']), 'B2X', 'same name is not its own alias');
 console.log('ok');
 const tl = [['id', 'owner', 'image', 'date'], ['100', 'Bank', 'https://x/d/a', '2026-11-01'], ['', '', '', ''], ['300', 'Nont', 'https://x/d/b', '2026-11-12'], ['200', 'NoPic', '', '2026-11-05']];
 assert.deepStrictEqual(ctx.tierListsList(tl).map(r => r.owner), ['Nont', 'Bank'], 'newest first, rows without a picture skipped');
